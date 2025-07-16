@@ -12,6 +12,7 @@ const TripResults: React.FC = () => {
   const [tripData, setTripData] = useState<TripData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  console.log("TripResults: tripId from URL params:", tripId);
   const [activeTab, setActiveTab] = useState<"summary" | "map" | "logs">("summary");
   const [mapKey, setMapKey] = useState<number>(0);
   const [printMode, setPrintMode] = useState<"active" | "all">("active");
@@ -22,12 +23,26 @@ const TripResults: React.FC = () => {
 
   useEffect(() => {
     const fetchTripData = async () => {
-      if (!tripId) return;
+      if (!tripId) {
+        setError("No trip ID provided");
+        setLoading(false);
+        return;
+      }
+
+      const parsedTripId = parseInt(tripId);
+      if (isNaN(parsedTripId) || parsedTripId <= 0) {
+        setError("Invalid trip ID");
+        setLoading(false);
+        return;
+      }
 
       try {
-        const data = await tripAPI.getTrip(parseInt(tripId));
+        console.log("Fetching trip data for ID:", parsedTripId);
+        const data = await tripAPI.getTrip(parsedTripId);
+        console.log("Trip data received:", data);
         setTripData(data);
       } catch (err) {
+        console.error("Error fetching trip data:", err);
         setError("Failed to load trip data");
       } finally {
         setLoading(false);
@@ -96,7 +111,7 @@ const TripResults: React.FC = () => {
           size: A4 landscape !important;
           margin: 0.5cm !important;
         }
-  
+
         @media print {
           body, html {
             width: 100% !important;
@@ -105,20 +120,20 @@ const TripResults: React.FC = () => {
             padding: 0 !important;
             overflow-x: hidden !important;
           }
-  
+
           .max-w-7xl, .trip-container, .eld-logs-print {
             max-width: none !important;
             width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
           }
-  
+
           .print-page, .card, .border-2, .border-black {
             width: 100% !important;
             max-width: none !important;
             margin: 0 !important;
           }
-  
+
           .grid-cols-25 {
             width: 100% !important;
             max-width: none !important;
@@ -199,7 +214,16 @@ const TripResults: React.FC = () => {
   }
 
   if (!tripData) {
-    return <div>No trip data found</div>;
+    return (
+      <div className="text-center">
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded mb-4">
+          No trip data found
+        </div>
+        <Link to="/" className="text-blue-600 hover:text-blue-800">
+          ← Back to Trip Planner
+        </Link>
+      </div>
+    );
   }
 
   return (
@@ -232,7 +256,7 @@ const TripResults: React.FC = () => {
             margin: 0 !important;
             padding: 0 !important;
           }
-          
+
           @page {
             size: landscape !important;
             margin: 0.2cm !important;
@@ -252,10 +276,11 @@ const TripResults: React.FC = () => {
           </p>
         </div>
         <div className="flex space-x-2">
-          <button 
+          <button
             onClick={printActiveTab}
             disabled={activeTab === "map"}
-            className={`btn ${activeTab === "map" ? "btn-disabled opacity-50 cursor-not-allallowed" : "btn-secondary"} inline-flex items-center`}>
+            className={`btn ${activeTab === "map" ? "btn-disabled opacity-50 cursor-not-allallowed" : "btn-secondary"} inline-flex items-center`}
+          >
             <PrinterIcon className="h-4 w-4 mr-2" />
             Print Current Tab
           </button>

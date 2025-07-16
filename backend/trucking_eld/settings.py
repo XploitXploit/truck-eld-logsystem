@@ -47,7 +47,6 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -122,7 +121,6 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-        "rest_framework.authentication.SessionAuthentication",
     ],
 }
 
@@ -147,6 +145,8 @@ SIMPLE_JWT = {
 OPENROUTE_API_KEY = os.environ.get(
     "OPENROUTE_API_KEY", "5b3ce3597851110001cf62489d8b4c5a8b9e4a8db5c9f4e8a8f3d8e8"
 )
+
+CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", "http://localhost:3000,http://trucking_eld_backend:8000").split(",")
 
 # Custom user model
 AUTH_USER_MODEL = "users.TruckUser"

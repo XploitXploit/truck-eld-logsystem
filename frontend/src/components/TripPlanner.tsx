@@ -48,6 +48,7 @@ const TripPlanner: React.FC = () => {
 
       // Actual API call
       const response = await tripAPI.planTrip(formData);
+      // Using the trip_id property instead of id from the response
       navigate(`/trip/${response.trip_id}`);
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to plan trip. Please try again.");

@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from .models import TripPlan, HOSViolation
 from .serializers import (
     TripPlanSerializer,
@@ -8,11 +9,10 @@ from .serializers import (
     TripPlanDetailSerializer,
     HOSViolationSerializer,
 )
-from .services import HOSCalculator, ELDLogRenderer
+from .services import HOSCalculator
 import logging
 
 logger = logging.getLogger("route_planner.views")
-
 
 class TripPlanViewSet(viewsets.ModelViewSet):
     """
@@ -24,6 +24,7 @@ class TripPlanViewSet(viewsets.ModelViewSet):
     queryset = TripPlan.objects.all()
     serializer_class = TripPlanSerializer
     permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def get_serializer_class(self):
         """Return appropriate serializer class based on action"""
@@ -128,7 +129,6 @@ class TripPlanViewSet(viewsets.ModelViewSet):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
 
 class HOSViolationViewSet(viewsets.ReadOnlyModelViewSet):
     """

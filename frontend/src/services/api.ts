@@ -62,8 +62,12 @@ export const tripAPI = {
   },
 
   getTrip: async (tripId: number): Promise<TripData> => {
+    console.log("API: Fetching trip with ID:", tripId);
     const response = await api.get(`/api/trip/${tripId}/`);
-    return normalizeResponseData(response.data);
+    console.log("API: Raw server response:", response.data);
+    const normalizedData = normalizeResponseData(response.data);
+    console.log("API: Normalized trip data:", normalizedData);
+    return normalizedData;
   },
 };
 
@@ -91,9 +95,15 @@ function normalizeResponseData(data: any): TripData {
     data.fuel_stops_required = data.total_distance ? Math.floor(data.total_distance / 500) : 0;
   }
 
+  // Log the ID field for debugging
+  console.log("API: Normalizing data with ID fields:", {
+    id: data.id,
+    trip_id: data.trip_id,
+  });
+
   // Ensure all expected properties exist
   return {
-    trip_id: data.trip_id || 0,
+    trip_id: data.id || data.trip_id || 0,
     current_location: data.current_location || "",
     pickup_location: data.pickup_location || "",
     dropoff_location: data.dropoff_location || "",
