@@ -1,0 +1,11 @@
+Django==4.2.7
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+psycopg2-binary==2.9.9
+python-dotenv==1.0.0
+requests==2.31.0
+geopy==2.4.0
+dj-database-url==2.1.0
+whitenoise==6.6.0
+gunicorn==21.2.0
+ipdb==0.13.13

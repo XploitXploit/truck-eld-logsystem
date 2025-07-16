@@ -1,0 +1,324 @@
+import requests
+import logging
+import math
+from typing import List, Dict, Tuple, Optional, Any
+
+# Configure logger
+logger = logging.getLogger("route_planner.utils")
+
+
+def find_gas_stations_along_route(
+    route_geometry: Dict[str, Any], number_of_stops: int, radius_km: float = 2.0
+) -> List[Dict[str, Any]]:
+    """
+    Find gas stations at intervals along a route
+
+    Args:
+        route_geometry: The route geometry from OpenRouteService API
+        number_of_stops: The number of fuel stops to find
+        radius_km: Search radius in kilometers around each point
+
+    Returns:
+        List of dictionaries with gas station information
+    """
+    if not route_geometry or number_of_stops <= 0:
+        logger.warning("Invalid parameters for finding gas stations")
+        return []
+
+    try:
+        # Extract all route coordinates and create a combined list
+        all_coordinates = extract_route_coordinates(route_geometry)
+
+        if not all_coordinates:
+            logger.warning("No valid coordinates found in route geometry")
+            return []
+
+        # Calculate interval between stops
+        route_length = len(all_coordinates)
+        if route_length <= 2:  # Need at least start and end points
+            logger.warning("Route too short to calculate fuel stops")
+            return []
+
+        # Calculate positions for fuel stops
+        stop_positions = calculate_stop_positions(all_coordinates, number_of_stops)
+
+        # Find gas stations at each position
+        gas_stations = []
+        for position in stop_positions:
+            lat, lng = position
+            stations = find_nearby_gas_stations(lat, lng, radius_km)
+            if stations:
+                # Get the closest station
+                closest = stations[0]
+                gas_stations.append(
+                    {
+                        "name": closest.get("name", "Gas Station"),
+                        "location": {
+                            "lat": closest.get("lat"),
+                            "lng": closest.get("lng"),
+                        },
+                        "address": closest.get("address", ""),
+                        "amenities": closest.get("amenities", []),
+                    }
+                )
+
+        return gas_stations
+
+    except Exception as e:
+        logger.error(f"Error finding gas stations: {str(e)}", exc_info=True)
+        return []
+
+
+def extract_route_coordinates(
+    route_geometry: Dict[str, Any]
+) -> List[Tuple[float, float]]:
+    """
+    Extract coordinates from route geometry
+
+    Args:
+        route_geometry: The route geometry from OpenRouteService API
+
+    Returns:
+        List of [lat, lng] coordinate pairs
+    """
+    all_coordinates = []
+
+    try:
+        # Handle to_pickup route
+        if "to_pickup" in route_geometry:
+            pickup_coords = []
+            pickup_data = route_geometry["to_pickup"]
+
+            # Try to extract from routes format (OpenRouteService v2)
+            if "routes" in pickup_data and pickup_data["routes"]:
+                route = pickup_data["routes"][0]
+                if "geometry" in route:
+                    if (
+                        isinstance(route["geometry"], dict)
+                        and "coordinates" in route["geometry"]
+                    ):
+                        # GeoJSON format
+                        pickup_coords = [
+                            [coord[1], coord[0]]
+                            for coord in route["geometry"]["coordinates"]
+                        ]
+                    elif isinstance(route["geometry"], str):
+                        # Encoded polyline
+                        # We would need to implement polyline decoding here
+                        pass
+
+            # Try to extract from features format (GeoJSON)
+            elif "features" in pickup_data and pickup_data["features"]:
+                feature = pickup_data["features"][0]
+                if "geometry" in feature and "coordinates" in feature["geometry"]:
+                    pickup_coords = [
+                        [coord[1], coord[0]]
+                        for coord in feature["geometry"]["coordinates"]
+                    ]
+
+            all_coordinates.extend(pickup_coords)
+
+        # Handle to_delivery route
+        if "to_delivery" in route_geometry:
+            delivery_coords = []
+            delivery_data = route_geometry["to_delivery"]
+
+            # Try to extract from routes format (OpenRouteService v2)
+            if "routes" in delivery_data and delivery_data["routes"]:
+                route = delivery_data["routes"][0]
+                if "geometry" in route:
+                    if (
+                        isinstance(route["geometry"], dict)
+                        and "coordinates" in route["geometry"]
+                    ):
+                        # GeoJSON format
+                        delivery_coords = [
+                            [coord[1], coord[0]]
+                            for coord in route["geometry"]["coordinates"]
+                        ]
+                    elif isinstance(route["geometry"], str):
+                        # Encoded polyline
+                        # We would need to implement polyline decoding here
+                        pass
+
+            # Try to extract from features format (GeoJSON)
+            elif "features" in delivery_data and delivery_data["features"]:
+                feature = delivery_data["features"][0]
+                if "geometry" in feature and "coordinates" in feature["geometry"]:
+                    delivery_coords = [
+                        [coord[1], coord[0]]
+                        for coord in feature["geometry"]["coordinates"]
+                    ]
+
+            all_coordinates.extend(delivery_coords)
+
+    except Exception as e:
+        logger.error(f"Error extracting coordinates: {str(e)}", exc_info=True)
+
+    return all_coordinates
+
+
+def calculate_stop_positions(
+    coordinates: List[Tuple[float, float]], number_of_stops: int
+) -> List[Tuple[float, float]]:
+    """
+    Calculate positions for fuel stops along the route
+
+    Args:
+        coordinates: List of [lat, lng] coordinates
+        number_of_stops: Number of stops to calculate
+
+    Returns:
+        List of [lat, lng] positions for fuel stops
+    """
+    if not coordinates or number_of_stops <= 0:
+        return []
+
+    try:
+        route_length = len(coordinates)
+
+        # Calculate segment length based on number of stops
+        segment_length = route_length / (number_of_stops + 1)
+
+        # Calculate positions for each stop
+        stop_positions = []
+        for i in range(1, number_of_stops + 1):
+            index = int(i * segment_length)
+            if 0 <= index < route_length:
+                stop_positions.append(coordinates[index])
+
+        return stop_positions
+
+    except Exception as e:
+        logger.error(f"Error calculating stop positions: {str(e)}", exc_info=True)
+        return []
+
+
+def find_nearby_gas_stations(
+    lat: float, lng: float, radius_km: float = 2.0
+) -> List[Dict[str, Any]]:
+    """
+    Find gas stations near a specific location using Overpass API (OpenStreetMap)
+
+    Args:
+        lat: Latitude
+        lng: Longitude
+        radius_km: Search radius in kilometers
+
+    Returns:
+        List of gas station dictionaries
+    """
+    try:
+        # Overpass API query for gas stations
+        overpass_url = "https://overpass-api.de/api/interpreter"
+        overpass_query = f"""
+        [out:json];
+        node["amenity"="fuel"](around:{radius_km * 1000},{lat},{lng});
+        out body;
+        """
+
+        response = requests.post(overpass_url, data={"data": overpass_query})
+
+        if response.status_code != 200:
+            logger.error(f"Overpass API error: {response.status_code}, {response.text}")
+            return []
+
+        data = response.json()
+
+        # Process the results
+        stations = []
+        for element in data.get("elements", []):
+            if element.get("type") == "node":
+                tags = element.get("tags", {})
+
+                # Extract basic information
+                station = {
+                    "id": element.get("id"),
+                    "name": tags.get("name", "Gas Station"),
+                    "lat": element.get("lat"),
+                    "lng": element.get("lon"),
+                    "address": format_address(tags),
+                    "amenities": extract_amenities(tags),
+                }
+
+                stations.append(station)
+
+        # Sort by distance (approximate)
+        stations.sort(key=lambda x: calculate_distance(lat, lng, x["lat"], x["lng"]))
+
+        return stations
+
+    except Exception as e:
+        logger.error(f"Error finding nearby gas stations: {str(e)}", exc_info=True)
+        return []
+
+
+def format_address(tags: Dict[str, str]) -> str:
+    """Format the address from OSM tags"""
+    parts = []
+
+    # Street address
+    if "addr:housenumber" in tags and "addr:street" in tags:
+        parts.append(f"{tags['addr:housenumber']} {tags['addr:street']}")
+    elif "addr:street" in tags:
+        parts.append(tags["addr:street"])
+
+    # City, state, etc.
+    if "addr:city" in tags:
+        city_part = tags["addr:city"]
+        if "addr:state" in tags:
+            city_part += f", {tags['addr:state']}"
+        parts.append(city_part)
+
+    # Postal code
+    if "addr:postcode" in tags:
+        parts.append(tags["addr:postcode"])
+
+    return ", ".join(parts) if parts else "Unknown address"
+
+
+def extract_amenities(tags: Dict[str, str]) -> List[str]:
+    """Extract amenities from OSM tags"""
+    amenities = []
+
+    # Common truck stop amenities
+    if tags.get("hgv", "no") == "yes":
+        amenities.append("Truck Friendly")
+
+    if tags.get("hgv:parking", "no") == "yes":
+        amenities.append("Truck Parking")
+
+    if tags.get("shower", "no") == "yes":
+        amenities.append("Showers")
+
+    if tags.get("restaurant", "no") == "yes":
+        amenities.append("Restaurant")
+
+    if tags.get("shop", "") == "convenience":
+        amenities.append("Convenience Store")
+
+    if "brand" in tags:
+        amenities.append(f"Brand: {tags['brand']}")
+
+    return amenities
+
+
+def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """
+    Calculate the great circle distance between two points
+    on the earth (specified in decimal degrees)
+    """
+    # Convert decimal degrees to radians
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+
+    # Haversine formula
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+    )
+    c = 2 * math.asin(math.sqrt(a))
+    radius = 6371  # Radius of Earth in kilometers
+
+    return c * radius

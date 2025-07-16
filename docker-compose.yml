@@ -1,0 +1,84 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: trucking_eld_db
+    environment:
+      POSTGRES_DB: trucking_eld
+      POSTGRES_USER: trucking_user
+      POSTGRES_PASSWORD: trucking_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - trucking_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trucking_user -d trucking_eld"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  trucking-eld-backend:
+    build: ./backend
+    container_name: trucking-eld-backend
+    user: "${UID:-1000}:${GID:-1000}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-trucking-eld-secret-key-for-development
+      - DATABASE_URL=postgresql://trucking_user:trucking_password@postgres:5432/trucking_eld
+      - OPENROUTE_API_KEY=eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjdjMzJiZDdhYzYyNjRhOWRhNGI0OWQ1NWI5MjMxOWY3IiwiaCI6Im11cm11cjY0In0=
+      - ALLOWED_HOSTS=localhost,127.0.0.1,your-domain.com,your-server-ip,trucking-eld-backend
+    volumes:
+      - ./backend:/app
+      - backend_static:/app/staticfiles
+      - backend_media:/app/media
+    ports:
+      - "8000:8000"
+    networks:
+      - trucking_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/admin/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  trucking-eld-frontend:
+    build:
+     context: ./frontend
+     target: development
+    container_name: trucking-eld-frontend
+    depends_on:
+      - trucking-eld-backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000" 
+    networks:
+      - trucking_network
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+      - FAST_REFRESH=true
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  backend_static:
+  backend_media:
+
+networks:
+  trucking_network:
+    driver: bridge
