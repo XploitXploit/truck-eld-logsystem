@@ -1,166 +1,115 @@
-/* ELD LOG SYSTEM PRINT STYLES FOR A4 PAPER */
 @media print {
-  /* A4 page setup */
   @page {
-    size: A4 landscape !important;
-    margin: 0.3cm !important; /* Reduced margins */
+    size: legal landscape !important;
+    margin: 0.5cm !important;
   }
-  
-  .route-map-print,
-    .leaflet-container,
-    #routeMap,
-    .map-container {
-      display: none !important;
-    }
-    
-    /* Add a no-print class that can be applied to any element */
-    .no-print-map {
-      display: none !important;
-    }
-  
-  /* Basic page elements */
+
+  /* Reset all containers to full width */
   body, html {
     width: 100% !important;
-    max-width: 100% !important;
+    max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow-x: hidden !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  
-  /* Hide non-printable elements */
-  .no-print, button, nav, header, footer, .btn {
-    display: none !important;
-  }
-  
-  /* Main container */
-  .max-w-7xl, .trip-container, .container {
-    max-width: 100% !important; /* Use 100% instead of fixed width */
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  
-  /* ===== ELD LOGS A4 OPTIMIZATION ===== */
-  .eld-logs-print {
-    width: 100% !important; /* Use full width */
-    max-width: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    font-size: 8pt !important;
-    transform: scale(0.98) !important; /* Slight scaling to ensure fit */
-    transform-origin: top left !important;
-  }
-  
-  .eld-logs-print {
-    width: 100% !important;
-    height: 100% !important;
-    max-width: none !important;
-    max-height: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    transform: scale(1) !important;
-    transform-origin: top left !important;
-  }
-  
-  /* Print page - perfect fit */
+
+  /* Force all containers to full width */
+  .max-w-7xl, 
+  .trip-container, 
+  .container,
+  .eld-logs-print,
   .print-page {
-    page-break-after: always !important;
-    page-break-inside: avoid !important;
-    width: 100% !important;
-    height: 99% !important; /* Slightly less than 100% to avoid overflow */
-    margin: 0 !important;
-    padding: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-  }
-  
-  /* Card styles */
-  .card, .border-2, .border-black {
     max-width: none !important;
     width: 100% !important;
     margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
   }
-  
-  /* A4 optimized grid */
+
+  /* ELD Grid specific styles */
+  .card, 
+  .border-2, 
+  .border-black {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: 1px solid #000 !important;
+  }
+
+  /* Critical: Make the grid use full available width */
   .grid-cols-25 {
     display: grid !important;
-    grid-template-columns: 35px repeat(24, 1fr) !important; /* Reduced left column */
+    grid-template-columns: 100px repeat(24, 1fr) !important;
     width: 100% !important;
+    max-width: none !important;
+    gap: 0 !important;
   }
-  
-  /* Ensure grid takes full width */
-  .grid-container {
+
+  /* Ensure grid container padding doesn't restrict width */
+  .p-4 {
+    padding: 0.3cm !important;
     width: 100% !important;
-    padding: 0.1cm !important;
+    box-sizing: border-box !important;
   }
-  
-  /* Grid row height */
-  .grid-status-row {
-    height: 15px !important;
-    min-height: 15px !important;
-  }
-  
-  /* Adjust status labels */
-  .status-label {
-    font-size: 7px !important;
-    padding-right: 1px !important;
-    text-align: right !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-  }
-  
-  /* Hour markers */
-  .hour-label {
-    font-size: 7px !important;
-    padding: 0 !important;
-  }
-  
-  /* A4 optimized header */
-  .driver-log-title {
-    font-size: 12px !important;
-    margin-bottom: 0 !important;
-  }
-  
-  .driver-log-subtitle {
-    font-size: 9px !important;
-    margin-top: 0 !important;
-  }
-  
-  /* A4 optimized driver info */
-  .driver-info-section {
-    padding: 0.1cm !important;
-    font-size: 8px !important;
-  }
-  
-  /* A4 optimized remarks */
-  .remarks-section {
-    padding: 0.1cm !important;
-    font-size: 7px !important;
-    max-height: 2cm !important;
-    overflow: hidden !important;
-  }
-  
-  /* A4 optimized daily totals */
-  .daily-totals {
-    font-size: 8px !important;
-    padding: 0.1cm !important;
-  }
-  
-  /* Make sure grid segments are visible */
-  .eld-grid-segment {
-    height: 100% !important;
-  }
-  
-  /* Force any fixed widths to be removed */
-  .p-4, .p-2, .p-1 {
-    padding: 0.1cm !important;
-  }
-  
-  /* Force col-span-24 to take full width */
+
+  /* Grid segments */
   .col-span-24 {
     width: 100% !important;
     grid-column: span 24 / span 24 !important;
+  }
+
+  /* Status row heights */
+  .grid-cols-25 > div {
+    min-height: 25px !important;
+  }
+
+  /* Font sizes for better fit */
+  .text-xs {
+    font-size: 9px !important;
+  }
+
+  .text-sm {
+    font-size: 10px !important;
+  }
+
+  .text-xl {
+    font-size: 14px !important;
+  }
+
+  /* Remarks section optimization */
+  .remarks-section {
+    break-inside: avoid !important;
+    max-height: 150px !important;
+    overflow: hidden !important;
+  }
+
+  /* Daily totals section */
+  .grid-cols-4 {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    width: 100% !important;
+  }
+
+  /* Hide non-printable elements */
+  .no-print, 
+  button, 
+  nav, 
+  header, 
+  footer, 
+  .btn {
+    display: none !important;
+  }
+
+  /* Page breaks */
+  .print-page {
+    page-break-after: always !important;
+    page-break-inside: avoid !important;
+  }
+
+  .print-page:last-child {
+    page-break-after: auto !important;
   }
 }

@@ -46,29 +46,62 @@ const ELDLogGrid: React.FC<ELDLogGridProps> = ({ tripData }) => {
 
   return (
     <div className="space-y-8">
-      {/* Print Styles */}
       <style jsx>{`
         @media print {
+          .space-y-8 {
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          
+          /* Force the main container to full width */
+          .space-y-8 > div {
+            width: 100% !important;
+            max-width: none !important;
+          }
+          
+          /* Ensure grid takes full width */
+          .grid-cols-25 {
+            width: 100% !important;
+            max-width: none !important;
+            display: grid !important;
+            grid-template-columns: 100px repeat(24, 1fr) !important;
+          }
+          
+          /* Card full width */
+          .card {
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+          }
+          
+          /* Remove any container constraints */
+          .border-2.border-black {
+            width: 100% !important;
+            max-width: none !important;
+          }
+          
           .no-print {
             display: none !important;
           }
+          
           .print-page {
             page-break-after: always;
             page-break-inside: avoid;
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
+          
           .print-page:last-child {
             page-break-after: auto;
           }
+          
           @page {
             size: landscape;
             margin: 0.5cm;
-          }
-          .remarks-section {
-            break-inside: avoid;
-          }
-          .card {
-            box-shadow: none;
-            border: 1px solid #ddd;
           }
         }
       `}</style>

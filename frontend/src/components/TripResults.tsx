@@ -93,33 +93,36 @@ const TripResults: React.FC = () => {
       const style = document.createElement("style");
       style.textContent = `
         @page {
-          size: landscape !important;
-          margin: 0.3cm !important;
+          size: A4 landscape !important;
+          margin: 0.5cm !important;
         }
-
+  
         @media print {
           body, html {
-            width: 100vw !important;
-            max-width: 100% !important;
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
             overflow-x: hidden !important;
           }
-
-          .max-w-7xl {
+  
+          .max-w-7xl, .trip-container, .eld-logs-print {
             max-width: none !important;
             width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
           }
-
-          .trip-content {
+  
+          .print-page, .card, .border-2, .border-black {
             width: 100% !important;
-            padding: 0 !important;
+            max-width: none !important;
+            margin: 0 !important;
           }
-
-          .eld-logs-print {
+  
+          .grid-cols-25 {
             width: 100% !important;
-            transform: scale(0.95) !important;
-            transform-origin: top left !important;
+            max-width: none !important;
+            grid-template-columns: 100px repeat(24, 1fr) !important;
           }
         }
       `;
@@ -129,7 +132,7 @@ const TripResults: React.FC = () => {
       setTimeout(() => {
         window.print();
         document.head.removeChild(style);
-      }, 100);
+      }, 200);
     } else {
       // For other tabs, use default orientation with optimized styles
       const style = document.createElement("style");
@@ -200,7 +203,7 @@ const TripResults: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto trip-container">
+    <div className="max-w-7xl mx-auto trip-container print:max-w-none print:w-full print:mx-0">
       <style jsx>{`
         @media print {
           .trip-container {
