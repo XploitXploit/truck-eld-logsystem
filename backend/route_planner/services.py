@@ -5,7 +5,6 @@ from django.conf import settings
 import math
 from .utils import find_gas_stations_along_route
 
-# Configure logger
 logger = logging.getLogger("route_planner.services")
 
 
@@ -44,10 +43,8 @@ class RouteService:
 
     def get_route(self, start_coords, end_coords, waypoints=None):
         """Get route between coordinates"""
-        # Use the v2 endpoint with driving-hgv profile
         url = f"{self.base_url}/v2/directions/driving-hgv"
 
-        # Coordinates need to be in [longitude, latitude] format for ORS API
         coordinates = [
             [start_coords[1], start_coords[0]]
         ]  # Convert [lat, lng] to [lng, lat]
@@ -60,7 +57,6 @@ class RouteService:
 
         logger.debug(f"Requesting route with coordinates: {coordinates}")
 
-        # For v2 API, api_key goes in the Authorization header with Bearer prefix
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -82,7 +78,6 @@ class RouteService:
             logger.debug(f"Request headers: {headers}")
             logger.debug(f"Request data: {data}")
 
-            # Make the POST request with timeout to prevent hanging
             response = requests.post(url, headers=headers, json=data, timeout=30)
 
             logger.debug(f"Response status code: {response.status_code}")
@@ -90,7 +85,6 @@ class RouteService:
                 route_data = response.json()
                 logger.debug(f"Response data keys: {route_data.keys()}")
 
-                # Validate the route data has the expected structure
                 if not route_data:
                     logger.error("Empty response data received from routing API")
                     return None
@@ -105,18 +99,15 @@ class RouteService:
                     return None
 
                 if "routes" in route_data and len(route_data["routes"]) > 0:
-                    # Valid response format with routes
                     pass
                 else:
                     logger.error(f"Unexpected response format: {route_data.keys()}")
                     return None
 
-                # Continue with valid route data
                 logger.debug(
                     f"Successfully calculated route between {start_coords} and {end_coords}"
                 )
 
-                # Extract basic route stats for logging
                 summary = route_data["routes"][0].get("summary", {})
                 distance = summary.get("distance", 0)
                 duration = summary.get("duration", 0)
@@ -184,13 +175,11 @@ class HOSCalculator:
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-        # Get route data
         logger.info(
             f"Calculating ELD logs for trip from {current_location} to {dropoff_location}"
         )
         route_service = RouteService()
 
-        # Geocode locations
         logger.debug(f"Geocoding current location: {current_location}")
         current_coords = route_service.geocode_location(current_location)
         logger.debug(f"Geocoding pickup location: {pickup_location}")
@@ -198,7 +187,6 @@ class HOSCalculator:
         logger.debug(f"Geocoding dropoff location: {dropoff_location}")
         dropoff_coords = route_service.geocode_location(dropoff_location)
 
-        # Check each location and provide specific error message
         missing_locations = []
         if not current_coords:
             missing_locations.append(f"current location '{current_location}'")
@@ -212,7 +200,6 @@ class HOSCalculator:
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-        # Get routes
         logger.info(f"Calculating route from {current_location} to {pickup_location}")
         route_to_pickup = route_service.get_route(current_coords, pickup_coords)
         if not route_to_pickup:
@@ -233,17 +220,13 @@ class HOSCalculator:
             f"Successfully calculated route from {pickup_location} to {dropoff_location}"
         )
 
-        # Routes have already been checked individually with more specific error messages
 
-        # Calculate total distance and time
         try:
-            # Extract distance and duration with defensive programming
             pickup_distance = 0
             pickup_duration = 0
             delivery_distance = 0
             delivery_duration = 0
 
-            # Safely extract route to pickup data
             if (
                 route_to_pickup
                 and "routes" in route_to_pickup
@@ -262,7 +245,6 @@ class HOSCalculator:
             else:
                 logger.warning("Could not extract pickup route data, using defaults")
 
-            # Safely extract route to delivery data
             if (
                 route_to_delivery
                 and "routes" in route_to_delivery
@@ -281,7 +263,6 @@ class HOSCalculator:
             else:
                 logger.warning("Could not extract delivery route data, using defaults")
 
-            # Distance is already in miles because we requested 'mi' units
             total_distance = pickup_distance + delivery_distance
             total_duration = (
                 pickup_duration + delivery_duration
@@ -293,17 +274,14 @@ class HOSCalculator:
             logger.error(f"Error extracting route data: {e}")
             raise ValueError(f"Invalid route data structure: {e}")
 
-        # Add time for pickup/delivery (1 hour each)
         pickup_time = 1.0
         delivery_time = 1.0
         total_on_duty_time = total_duration + pickup_time + delivery_time
 
-        # Calculate fuel stops (every 500 miles for typical trucks)
         fuel_stops = math.floor(total_distance / 500)
         fuel_stop_time = fuel_stops * 0.5  # 30 minutes per fuel stop
         total_on_duty_time += fuel_stop_time
 
-        # Find real gas stations along the route
         gas_stations = find_gas_stations_along_route(
             {
                 "to_pickup": route_to_pickup,
@@ -313,7 +291,6 @@ class HOSCalculator:
         )
         logger.info(f"Found {len(gas_stations)} gas stations along the route")
 
-        # Generate ELD logs
         logs = self._generate_daily_logs(
             total_duration,
             total_on_duty_time,
@@ -368,17 +345,14 @@ class HOSCalculator:
                 "violations": [],
             }
 
-            # Start day
             day_start = current_time
 
-            # Available hours for this day
             available_driving = min(self.max_driving_hours, remaining_driving)
             available_duty = min(self.max_duty_hours, remaining_duty)
             weekly_remaining = self.max_weekly_hours - cycle_hours_used
             available_duty = min(available_duty, weekly_remaining)
 
             if available_duty <= 0:
-                # Need 34-hour restart
                 log_entry["activities"].append(
                     {
                         "start_time": current_time.strftime("%H:%M"),
@@ -394,7 +368,6 @@ class HOSCalculator:
                 log_entry["daily_totals"]["off_duty"] = 24.0
                 logs.append(log_entry)
 
-                # Reset cycle if this completes 34-hour restart
                 if len(logs) >= 2:  # Second day of restart
                     cycle_hours_used = 0
 
@@ -407,7 +380,6 @@ class HOSCalculator:
             daily_duty = 0
             continuous_driving = 0
 
-            # Pre-trip inspection
             if day_number == 1:
                 log_entry["activities"].append(
                     {
@@ -428,7 +400,6 @@ class HOSCalculator:
                 current_activity_time += timedelta(minutes=15)
                 daily_duty += 0.25
 
-            # Drive until need break, end of day, or end of trip
             while (
                 remaining_driving > 0
                 and daily_driving < available_driving
@@ -436,7 +407,6 @@ class HOSCalculator:
                 and continuous_driving < self.required_rest_break_after
             ):
 
-                # Calculate driving segment
                 drive_segment = min(
                     remaining_driving,
                     available_driving - daily_driving,
@@ -448,7 +418,6 @@ class HOSCalculator:
                 if drive_segment <= 0:
                     break
 
-                # Add driving activity
                 end_time = current_activity_time + timedelta(hours=drive_segment)
                 log_entry["activities"].append(
                     {
@@ -468,12 +437,10 @@ class HOSCalculator:
                 remaining_duty -= drive_segment
                 continuous_driving += drive_segment
 
-                # Check if we need a 30-minute break
                 if (
                     continuous_driving >= self.required_rest_break_after
                     and remaining_driving > 0
                 ):
-                    # Add 30-minute break
                     break_end = current_activity_time + timedelta(minutes=30)
                     log_entry["activities"].append(
                         {
@@ -488,7 +455,6 @@ class HOSCalculator:
                     current_activity_time = break_end
                     continuous_driving = 0
 
-                # Add fuel stop if needed
                 if fuel_stops > 0 and daily_driving > 0 and daily_driving % 4 == 0:
                     fuel_end = current_activity_time + timedelta(minutes=30)
                     log_entry["activities"].append(
@@ -506,7 +472,6 @@ class HOSCalculator:
                     remaining_duty -= 0.5
                     fuel_stops -= 1
 
-            # Add pickup/delivery time if this is the appropriate day
             if day_number == 1 and pickup_time > 0:
                 pickup_end = current_activity_time + timedelta(hours=pickup_time)
                 log_entry["activities"].append(
@@ -541,7 +506,6 @@ class HOSCalculator:
                 remaining_duty -= delivery_time
                 delivery_time = 0
 
-            # Fill rest of day with off-duty time
             hours_in_day = 24
             total_logged_hours = sum(
                 activity["duration"] for activity in log_entry["activities"]
@@ -564,14 +528,12 @@ class HOSCalculator:
                     }
                 )
 
-            # Calculate daily totals
             for activity in log_entry["activities"]:
                 status = activity["status"]
                 duration = activity["duration"]
                 if status in log_entry["daily_totals"]:
                     log_entry["daily_totals"][status] += duration
 
-            # Update cycle hours
             cycle_hours_used += daily_duty
 
             logs.append(log_entry)
@@ -585,7 +547,6 @@ class HOSCalculator:
         violations = []
 
         for log in logs:
-            # Check daily limits
             if log["daily_totals"]["driving"] > self.max_driving_hours:
                 violations.append(
                     {
@@ -636,12 +597,10 @@ class ELDLogRenderer:
             "grid_segments": [],
         }
 
-        # Convert activities to grid segments
         for activity in log_entry["activities"]:
             start_minutes = self._time_to_minutes(activity["start_time"])
             end_minutes = self._time_to_minutes(activity["end_time"])
 
-            # Handle time crossing midnight
             if end_minutes < start_minutes:
                 end_minutes += 24 * 60
 

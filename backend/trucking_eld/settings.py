@@ -28,7 +28,6 @@ else:
     ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 
-# Application definition
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -74,19 +73,14 @@ TEMPLATES = [
 WSGI_APPLICATION = "trucking_eld.wsgi.application"
 
 
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 if DATABASE_URL:
     DATABASES = {"default": dj_database_url.parse(DATABASE_URL)}
 else:
-    # Don't fall back to SQLite - this will cause an error if no DATABASE_URL
     raise ValueError("DATABASE_URL environment variable is required")
 
 
-# Password validation
-# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -104,8 +98,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
 
 LANGUAGE_CODE = "en-us"
 
@@ -116,14 +108,10 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = "static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -141,7 +129,6 @@ OPENROUTE_API_KEY = os.environ.get(
     "OPENROUTE_API_KEY", "5b3ce3597851110001cf62489d8b4c5a8b9e4a8db5c9f4e8a8f3d8e8"
 )
 
-# Logging Configuration
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -184,5 +171,4 @@ LOGGING = {
     },
 }
 
-# Apply logging configuration
 logging.config.dictConfig(LOGGING)

@@ -14,6 +14,8 @@ const TripPlanner: React.FC = () => {
     current_cycle_hours: 0,
   });
   const [loading, setLoading] = useState(false);
+  const [calculatingTrip, setCalculatingTrip] = useState(false);
+  const [calculationStep, setCalculationStep] = useState(0);
   const [error, setError] = useState("");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,16 +28,32 @@ const TripPlanner: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setCalculatingTrip(true);
+    setCalculationStep(1);
     setError("");
 
     try {
+      // Simulate step progression for better UX
+      const simulateSteps = async () => {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        setCalculationStep(2);
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        setCalculationStep(3);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        setCalculationStep(4);
+      };
+
+      // Start the step simulation
+      simulateSteps();
+
+      // Actual API call
       const response = await tripAPI.planTrip(formData);
       navigate(`/trip/${response.trip_id}`);
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to plan trip. Please try again.");
     } finally {
-      setLoading(false);
+      setCalculatingTrip(false);
+      setCalculationStep(0);
     }
   };
 
@@ -79,7 +97,56 @@ const TripPlanner: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 relative">
+          {calculatingTrip && (
+            <div className="absolute inset-0 bg-white bg-opacity-80 z-10 flex flex-col items-center justify-center rounded-md">
+              <svg
+                className="animate-spin h-10 w-10 text-blue-600 mb-4"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              <div className="text-lg font-medium text-blue-700">
+                {calculationStep === 1 && "Calculating optimal route..."}
+                {calculationStep === 2 && "Analyzing HOS compliance..."}
+                {calculationStep === 3 && "Planning fuel stops..."}
+                {calculationStep === 4 && "Generating ELD logs..."}
+              </div>
+              <div className="text-sm text-gray-600 mt-2 mb-6">
+                This may take a moment to ensure regulatory compliance
+              </div>
+
+              {/* Step indicator */}
+              <div className="w-64 bg-gray-200 rounded-full h-2.5">
+                <div
+                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-in-out"
+                  style={{ width: `${calculationStep * 25}%` }}
+                ></div>
+              </div>
+
+              {/* Step labels */}
+              <div className="w-64 flex justify-between mt-2 text-xs text-gray-500">
+                <div className={calculationStep >= 1 ? "text-blue-600 font-medium" : ""}>Route</div>
+                <div className={calculationStep >= 2 ? "text-blue-600 font-medium" : ""}>HOS</div>
+                <div className={calculationStep >= 3 ? "text-blue-600 font-medium" : ""}>Stops</div>
+                <div className={calculationStep >= 4 ? "text-blue-600 font-medium" : ""}>Logs</div>
+              </div>
+            </div>
+          )}
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label className="form-label">Current Location</label>
@@ -146,8 +213,41 @@ const TripPlanner: React.FC = () => {
             </ul>
           </div>
 
-          <button type="submit" disabled={loading} className="btn btn-primary w-full py-3 text-lg">
-            {loading ? "Planning Trip..." : "Plan Trip & Generate ELD Logs"}
+          <button
+            type="submit"
+            disabled={calculatingTrip}
+            className="btn btn-primary w-full py-3 text-lg relative"
+          >
+            {calculatingTrip ? (
+              <>
+                <span className="opacity-0">Plan Trip & Generate ELD Logs</span>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <svg
+                    className="animate-spin h-6 w-6 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  <span className="ml-2">Planning Trip...</span>
+                </div>
+              </>
+            ) : (
+              "Plan Trip & Generate ELD Logs"
+            )}
           </button>
         </form>
       </div>

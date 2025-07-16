@@ -128,7 +128,7 @@ const Autocomplete: React.FC<AutocompleteProps> = ({
       />
 
       {loading && (
-        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
           <svg
             className="animate-spin h-5 w-5 text-gray-400"
             xmlns="http://www.w3.org/2000/svg"
@@ -153,7 +153,7 @@ const Autocomplete: React.FC<AutocompleteProps> = ({
       )}
 
       {isOpen && results.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-20 w-full mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto">
           <ul className="py-1">
             {results.map((result) => (
               <li
@@ -169,7 +169,7 @@ const Autocomplete: React.FC<AutocompleteProps> = ({
       )}
 
       {isOpen && query.length >= 3 && results.length === 0 && !loading && (
-        <div className="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg">
+        <div className="absolute z-20 w-full mt-1 bg-white rounded-md shadow-lg">
           <div className="px-4 py-2 text-sm text-gray-500">No results found</div>
         </div>
       )}

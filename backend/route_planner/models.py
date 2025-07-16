@@ -1,7 +1,6 @@
 from django.db import models
 import logging
 
-# Configure logger
 logger = logging.getLogger("route_planner.models")
 
 
@@ -12,19 +11,16 @@ class TripPlan(models.Model):
     current_cycle_hours = models.FloatField(default=0.0)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # Route data
     total_distance = models.FloatField(null=True, blank=True)
     total_duration = models.FloatField(null=True, blank=True)  # in hours
     route_geometry = models.JSONField(null=True, blank=True)
 
-    # ELD data
     eld_logs = models.JSONField(null=True, blank=True)
 
     def __str__(self):
         return f"Trip from {self.current_location} to {self.dropoff_location}"
 
     def save(self, *args, **kwargs):
-        # Log creation or update
         is_new = self.pk is None
         action = "Creating" if is_new else "Updating"
         logger.info(
@@ -52,7 +48,6 @@ class HOSViolation(models.Model):
         return f"{self.violation_type} - {self.trip.id}"
 
     def save(self, *args, **kwargs):
-        # Log creation or update
         is_new = self.pk is None
         action = "Creating" if is_new else "Updating"
         logger.info(

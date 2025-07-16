@@ -2,11 +2,9 @@ from django.contrib import admin
 import logging
 from .models import TripPlan, HOSViolation
 
-# Configure logger
 logger = logging.getLogger("route_planner.admin")
 
 
-# Register your models here.
 @admin.register(TripPlan)
 class TripPlanAdmin(admin.ModelAdmin):
     list_display = (

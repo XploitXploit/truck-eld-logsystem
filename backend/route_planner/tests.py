@@ -21,9 +21,7 @@ class LoggingTestCase(TestCase):
 
     def test_views_logging(self):
         """Test that views are logging properly"""
-        # Mock the HOSCalculator to avoid actual API calls
         with patch("route_planner.views.HOSCalculator") as mock_calculator:
-            # Set up the mock to return test data
             mock_calculator.return_value.calculate_eld_logs.return_value = {
                 "total_distance": 500,
                 "total_duration": 10,
@@ -38,7 +36,6 @@ class LoggingTestCase(TestCase):
                 "violations": [],
             }
 
-            # Test plan_trip view logging
             test_data = {
                 "current_location": "Test Start",
                 "pickup_location": "Test Pickup",
@@ -53,11 +50,9 @@ class LoggingTestCase(TestCase):
             self.assertIn("Processing trip planning request", log_contents)
             self.assertIn("Trip planning completed successfully", log_contents)
 
-            # Clear log for next test
             self.log_stream.truncate(0)
             self.log_stream.seek(0)
 
-            # Test missing field error logging
             response = self.client.post(reverse("plan_trip"), {}, format="json")
             self.assertEqual(response.status_code, 400)
 
@@ -69,7 +64,6 @@ class LoggingTestCase(TestCase):
         self.log_stream.truncate(0)
         self.log_stream.seek(0)
 
-        # Create a trip plan and check logging
         trip = TripPlan.objects.create(
             current_location="Test Start",
             pickup_location="Test Pickup",
@@ -85,11 +79,9 @@ class LoggingTestCase(TestCase):
         )
         self.assertIn(f"Created TripPlan with ID: {trip.id}", log_contents)
 
-        # Clear log for next test
         self.log_stream.truncate(0)
         self.log_stream.seek(0)
 
-        # Create a violation and check logging
         violation = HOSViolation.objects.create(
             trip=trip,
             violation_type="Test Violation",
@@ -121,7 +113,6 @@ class ServiceLoggingTestCase(TestCase):
         """Test that geocoding logs errors properly"""
         from .services import RouteService
 
-        # Mock geocoding error
         mock_get.side_effect = Exception("Test geocoding error")
 
         service = RouteService()
@@ -136,7 +127,6 @@ class ServiceLoggingTestCase(TestCase):
         """Test that route calculation logs errors properly"""
         from .services import RouteService
 
-        # Mock route error
         mock_post.side_effect = Exception("Test route error")
 
         service = RouteService()

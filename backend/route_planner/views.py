@@ -1,12 +1,10 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import TripPlan
+from .models import TripPlan, HOSViolation
 from .services import HOSCalculator, ELDLogRenderer
-import json
 import logging
 
-# Configure logger
 logger = logging.getLogger("route_planner.views")
 
 
@@ -17,7 +15,6 @@ def plan_trip(request):
         logger.info("Processing trip planning request")
         data = request.data
 
-        # Validate input
         required_fields = [
             "current_location",
             "pickup_location",
@@ -38,14 +35,12 @@ def plan_trip(request):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Calculate trip plan
         logger.debug(
             f"Calculating trip plan from {data['current_location']} to {data['dropoff_location']}"
         )
         hos_calculator = HOSCalculator()
         trip_result = hos_calculator.calculate_eld_logs(data)
 
-        # Save trip plan
         trip = TripPlan.objects.create(
             current_location=data["current_location"],
             pickup_location=data["pickup_location"],
@@ -57,13 +52,23 @@ def plan_trip(request):
             eld_logs=trip_result["eld_logs"],
         )
 
-        # Generate ELD log grids
         logger.debug(f"Generating ELD log grids for trip ID: {trip.id}")
+        
+        for violation in trip_result["violations"]:
+            HOSViolation.objects.create(
+                trip=trip,
+                violation_type=violation["type"],
+                description=violation["description"],
+                severity=violation["severity"]
+            )
+        
         log_renderer = ELDLogRenderer()
         eld_grids = []
         for log_entry in trip_result["eld_logs"]:
             grid_data = log_renderer.generate_log_grid_data(log_entry)
             eld_grids.append(grid_data)
+        
+        
 
         response_data = {
             "trip_id": trip.id,
@@ -92,7 +97,6 @@ def plan_trip(request):
         return Response(response_data, status=status.HTTP_200_OK)
 
     except ValueError as e:
-        # Handle validation errors with 400 status
         logger.warning(f"Trip planning validation error: {str(e)}", exc_info=True)
         return Response(
             {
@@ -102,7 +106,6 @@ def plan_trip(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
     except Exception as e:
-        # Handle other errors with 500 status
         logger.error(f"Trip planning failed: {str(e)}", exc_info=True)
         return Response(
             {"error": f"Trip planning failed: {str(e)}", "error_type": "server_error"},
@@ -117,7 +120,6 @@ def get_trip(request, trip_id):
         logger.info(f"Getting trip plan for ID: {trip_id}")
         trip = TripPlan.objects.get(id=trip_id)
 
-        # Generate ELD grids
         logger.debug(f"Generating ELD grids for trip ID: {trip_id}")
         log_renderer = ELDLogRenderer()
         eld_grids = []
@@ -126,13 +128,11 @@ def get_trip(request, trip_id):
                 grid_data = log_renderer.generate_log_grid_data(log_entry)
                 eld_grids.append(grid_data)
 
-        # Extract violations from logs or set empty list
         violations = []
         for log in trip.eld_logs:
             if "violations" in log and log["violations"]:
                 violations.extend(log["violations"])
 
-        # Generate summary data
         summary = {
             "total_days": len(trip.eld_logs),
             "total_driving_time": sum(
