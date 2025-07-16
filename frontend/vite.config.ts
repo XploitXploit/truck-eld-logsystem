@@ -18,6 +18,11 @@ export default defineConfig({
     allowedHosts: [
       'truck-eld.fpellerano.com',
     ],
+    hmr: {
+          host: 'truck-eld.fpellerano.com',
+          port: 3000,
+          protocol: 'wss' // Use secure WebSocket if HTTPS
+        },
   },
   build: {
     outDir: 'dist',
