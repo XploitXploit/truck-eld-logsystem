@@ -1,10 +1,31 @@
 import { TruckIcon, UserCircleIcon } from "@heroicons/react/24/outline";
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Header: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuth();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  // Handle clicks outside the dropdown to close it
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownRef]);
+
+  const toggleDropdown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
   return (
     <header className="bg-blue-600 text-white shadow-lg">
       <div className="container mx-auto px-4 py-4">
@@ -22,16 +43,17 @@ const Header: React.FC = () => {
             </a>
 
             {isAuthenticated ? (
-              <div className="relative group z-50">
+              <div className="relative z-50" ref={dropdownRef}>
                 <button
                   className="flex items-center text-white hover:text-blue-200 transition-colors"
                   type="button"
-                  aria-expanded="false"
+                  aria-expanded={isDropdownOpen}
+                  onClick={toggleDropdown}
                 >
                   <UserCircleIcon className="h-6 w-6 mr-1" />
                   <span className="font-medium">{user?.username || "User"}</span>
                   <svg
-                    className="ml-1 h-4 w-4"
+                    className={`ml-1 h-4 w-4 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -44,33 +66,37 @@ const Header: React.FC = () => {
                     />
                   </svg>
                 </button>
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block">
-                  <div className="px-4 py-3 text-sm text-gray-900 border-b border-gray-200">
-                    <div className="font-medium truncate">{user?.email || "user@example.com"}</div>
-                    {user?.truck_id && (
-                      <div className="text-gray-500">Truck ID: {user.truck_id}</div>
-                    )}
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-10">
+                    <div className="px-4 py-3 text-sm text-gray-900 border-b border-gray-200">
+                      <div className="font-medium truncate">
+                        {user?.email || "user@example.com"}
+                      </div>
+                      {user?.truck_id && (
+                        <div className="text-gray-500">Truck ID: {user.truck_id}</div>
+                      )}
+                    </div>
+                    <Link
+                      to="/profile"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                    >
+                      Your Profile
+                    </Link>
+                    <Link
+                      to="/trips"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                    >
+                      Your Trips
+                    </Link>
+                    <div className="border-t border-gray-200"></div>
+                    <button
+                      onClick={logout}
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                    >
+                      Sign out
+                    </button>
                   </div>
-                  <Link
-                    to="/profile"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                  >
-                    Your Profile
-                  </Link>
-                  <Link
-                    to="/trips"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                  >
-                    Your Trips
-                  </Link>
-                  <div className="border-t border-gray-200"></div>
-                  <button
-                    onClick={logout}
-                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                  >
-                    Sign out
-                  </button>
-                </div>
+                )}
               </div>
             ) : (
               <div className="flex space-x-2">
