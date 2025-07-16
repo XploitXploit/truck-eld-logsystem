@@ -1,38 +1,39 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { TruckIcon, MapPinIcon, ClockIcon } from '@heroicons/react/24/outline';
-import { tripAPI } from '../services/api';
-import type { TripFormData } from '../types';
+import { ClockIcon, MapPinIcon, TruckIcon } from "@heroicons/react/24/outline";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { tripAPI } from "../services/api";
+import type { TripFormData } from "../types";
+import Autocomplete from "./common/Autocomplete";
 
 const TripPlanner: React.FC = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<TripFormData>({
-    current_location: '',
-    pickup_location: '',
-    dropoff_location: '',
-    current_cycle_hours: 0
+    current_location: "",
+    pickup_location: "",
+    dropoff_location: "",
+    current_cycle_hours: 0,
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: name === 'current_cycle_hours' ? parseFloat(value) || 0 : value
+      [name]: name === "current_cycle_hours" ? parseFloat(value) || 0 : value,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       const response = await tripAPI.planTrip(formData);
       navigate(`/trip/${response.trip_id}`);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to plan trip. Please try again.');
+      setError(err.response?.data?.error || "Failed to plan trip. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -48,7 +49,7 @@ const TripPlanner: React.FC = () => {
         <p className="text-xl text-gray-600 mb-8">
           Plan your trip with automatic HOS compliance checking and ELD log generation
         </p>
-        
+
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <div className="card">
             <TruckIcon className="h-12 w-12 text-blue-600 mx-auto mb-4" />
@@ -71,7 +72,7 @@ const TripPlanner: React.FC = () => {
       {/* Trip Planning Form */}
       <div className="card">
         <h3 className="text-2xl font-bold text-gray-900 mb-6">Plan Your Trip</h3>
-        
+
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
             {error}
@@ -81,24 +82,19 @@ const TripPlanner: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <label className="form-label">
-                Current Location
-              </label>
-              <input
-                type="text"
-                name="current_location"
+              <label className="form-label">Current Location</label>
+              <Autocomplete
                 value={formData.current_location}
-                onChange={handleInputChange}
+                onChange={(value) => setFormData((prev) => ({ ...prev, current_location: value }))}
+                onSelect={(value) => setFormData((prev) => ({ ...prev, current_location: value }))}
                 placeholder="e.g., Chicago, IL"
                 className="form-input"
                 required
               />
             </div>
-            
+
             <div>
-              <label className="form-label">
-                Current Cycle Hours Used
-              </label>
+              <label className="form-label">Current Cycle Hours Used</label>
               <input
                 type="number"
                 name="current_cycle_hours"
@@ -116,14 +112,11 @@ const TripPlanner: React.FC = () => {
           </div>
 
           <div>
-            <label className="form-label">
-              Pickup Location
-            </label>
-            <input
-              type="text"
-              name="pickup_location"
+            <label className="form-label">Pickup Location</label>
+            <Autocomplete
               value={formData.pickup_location}
-              onChange={handleInputChange}
+              onChange={(value) => setFormData((prev) => ({ ...prev, pickup_location: value }))}
+              onSelect={(value) => setFormData((prev) => ({ ...prev, pickup_location: value }))}
               placeholder="e.g., Detroit, MI"
               className="form-input"
               required
@@ -131,14 +124,11 @@ const TripPlanner: React.FC = () => {
           </div>
 
           <div>
-            <label className="form-label">
-              Dropoff Location
-            </label>
-            <input
-              type="text"
-              name="dropoff_location"
+            <label className="form-label">Dropoff Location</label>
+            <Autocomplete
               value={formData.dropoff_location}
-              onChange={handleInputChange}
+              onChange={(value) => setFormData((prev) => ({ ...prev, dropoff_location: value }))}
+              onSelect={(value) => setFormData((prev) => ({ ...prev, dropoff_location: value }))}
               placeholder="e.g., Atlanta, GA"
               className="form-input"
               required
@@ -156,12 +146,8 @@ const TripPlanner: React.FC = () => {
             </ul>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn btn-primary w-full py-3 text-lg"
-          >
-            {loading ? 'Planning Trip...' : 'Plan Trip & Generate ELD Logs'}
+          <button type="submit" disabled={loading} className="btn btn-primary w-full py-3 text-lg">
+            {loading ? "Planning Trip..." : "Plan Trip & Generate ELD Logs"}
           </button>
         </form>
       </div>
