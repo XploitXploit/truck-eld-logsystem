@@ -15,6 +15,9 @@ export default defineConfig({
         secure: false,
       },
     },
+    allowedHosts: [
+      'truck-eld.fpellerano.com',
+    ],
   },
   build: {
     outDir: 'dist',

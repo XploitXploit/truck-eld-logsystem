@@ -1,10 +1,18 @@
 from django.db import models
+from django.conf import settings
 import logging
 
 logger = logging.getLogger("route_planner.models")
 
 
 class TripPlan(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="trips",
+        null=True,
+        blank=True,
+    )
     current_location = models.CharField(max_length=255)
     pickup_location = models.CharField(max_length=255)
     dropoff_location = models.CharField(max_length=255)
@@ -16,6 +24,16 @@ class TripPlan(models.Model):
     route_geometry = models.JSONField(null=True, blank=True)
 
     eld_logs = models.JSONField(null=True, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("planned", "Planned"),
+            ("in_progress", "In Progress"),
+            ("completed", "Completed"),
+            ("cancelled", "Cancelled"),
+        ],
+        default="planned",
+    )
 
     def __str__(self):
         return f"Trip from {self.current_location} to {self.dropoff_location}"

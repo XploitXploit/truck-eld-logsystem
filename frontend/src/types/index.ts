@@ -1,3 +1,40 @@
+export interface AuthUser {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  truck_id: string;
+  license_number: string;
+  license_expiry: string | null;
+  phone_number: string;
+}
+
+export interface LoginFormData {
+  username: string;
+  password: string;
+}
+
+export interface RegisterFormData {
+  username: string;
+  email: string;
+  password: string;
+  password2: string;
+  first_name?: string;
+  last_name?: string;
+  truck_id?: string;
+  license_number?: string;
+  license_expiry?: string;
+  phone_number?: string;
+}
+
+export interface AuthResponse {
+  user: AuthUser;
+  access: string;
+  refresh: string;
+  message: string;
+}
+
 export interface TripFormData {
   current_location: string;
   pickup_location: string;

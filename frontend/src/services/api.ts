@@ -16,6 +16,7 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
+    // Token will be added automatically via defaults.headers set in authService
     return config;
   },
   (error) => {
@@ -27,7 +28,27 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 500) {
+    if (error.response?.status === 401) {
+      // Unauthorized - token might be expired
+      console.error("Authentication error:", error.response.data);
+      // Could trigger token refresh here or redirect to login
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (refreshToken) {
+        // Import needs to be done here to avoid circular dependency
+        import("./authService").then(({ authAPI }) => {
+          authAPI.refreshToken(refreshToken).catch(() => {
+            // If refresh fails, redirect to login
+            localStorage.removeItem("token");
+            localStorage.removeItem("refreshToken");
+            localStorage.removeItem("user");
+            window.location.href = "/login";
+          });
+        });
+      } else {
+        // No refresh token, redirect to login
+        window.location.href = "/login";
+      }
+    } else if (error.response?.status === 500) {
       console.error("Server error:", error.response.data);
     }
     return Promise.reject(error);
