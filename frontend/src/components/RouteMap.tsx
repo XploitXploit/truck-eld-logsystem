@@ -54,72 +54,93 @@ interface RouteMapProps {
 
 const RouteMap: React.FC<RouteMapProps> = ({ tripData }) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const map = useRef<L.Map | null>(null);
+  const mapInstance = useRef<L.Map | null>(null);
   const [selectedStation, setSelectedStation] = useState<GasStation | null>(null);
+  const mapInitialized = useRef(false);
 
+  // Create print styles for the map
   useEffect(() => {
-    if (!mapRef.current || !tripData.route_geometry) {
-      console.log("Map ref or route_geometry missing", {
-        mapRef: !!mapRef.current,
-        geometry: !!tripData.route_geometry,
-      });
+    const addPrintStyles = () => {
+      const style = document.createElement("style");
+      style.setAttribute("data-print-map-styles", "true");
+      style.textContent = `
+        @media print {
+          .route-map-container {
+            width: 100% !important;
+            height: 18cm !important;
+            max-width: 100% !important;
+            page-break-inside: avoid;
+          }
+
+          .map-legend {
+            font-size: 0.7rem !important;
+            padding: 0.2cm !important;
+          }
+
+          .map-info {
+            font-size: 0.8rem !important;
+            padding: 0.2cm !important;
+          }
+
+          .fuel-station-popup {
+            font-size: 0.7rem !important;
+            max-width: 200px !important;
+          }
+
+          /* Ensure icons are visible in print view */
+          .leaflet-marker-icon,
+          .leaflet-marker-shadow,
+          .leaflet-pane {
+            display: block !important;
+            visibility: visible !important;
+          }
+
+          /* Make the fuel icons more visible in print */
+          .custom-div-icon div {
+            border: 2px solid black !important;
+            color: black !important;
+            font-weight: bold !important;
+            print-color-adjust: exact !important;
+            -webkit-print-color-adjust: exact !important;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+      return style;
+    };
+
+    const styleElement = addPrintStyles();
+
+    return () => {
+      if (styleElement && document.head.contains(styleElement)) {
+        document.head.removeChild(styleElement);
+      }
+    };
+  }, []);
+
+  // Initialize and configure the map
+  useEffect(() => {
+    if (!mapRef.current || !tripData.route_geometry || mapInitialized.current) {
       return;
     }
 
-    console.log("Route geometry data:", tripData.route_geometry);
-
-    // Clean up any existing map instance
-    if (map.current) {
-      map.current.remove();
-    }
-
-    // Initialize map
-    map.current = L.map(mapRef.current).setView([39.8283, -98.5795], 4);
-
-    // Add tile layer
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors",
-    }).addTo(map.current);
-
-    // Custom icons
+    // Helper function to create custom icons
     const createIcon = (color: string, icon: string) =>
       L.divIcon({
-        html: `<div style="background-color: ${color}; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); color: white; font-weight: bold;">${icon}</div>`,
-        className: "custom-div-icon",
+        html: `<div style="background-color: ${color}; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid black; box-shadow: 0 2px 4px rgba(0,0,0,0.5); color: black; font-weight: bold;">${icon}</div>`,
+        className: "custom-div-icon print-visible-icon",
         iconSize: [30, 30],
         iconAnchor: [15, 15],
       });
 
-    const startIcon = createIcon("#10B981", "S");
-    const pickupIcon = createIcon("#3B82F6", "P");
-    const deliveryIcon = createIcon("#EF4444", "D");
-    const fuelIcon = createIcon("#F59E0B", "⛽");
-    const realFuelIcon = L.divIcon({
-      html: `<div style="background-color: #F59E0B; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); color: white; font-weight: bold;">⛽</div>`,
-      className: "custom-div-icon",
-      iconSize: [36, 36],
-      iconAnchor: [18, 18],
-    });
-
-    // Add route lines
-    let routes = tripData.route_geometry;
-    const allCoordinates: [number, number][] = [];
-
-    console.log("Route geometry type:", typeof routes);
-
-    // Extract coordinates from polyline geometry or parse from encoded polyline
+    // Helper function to extract coordinates from route data
     const extractCoordinates = (routeData: any, label: string = ""): [number, number][] => {
-      console.log(`Extracting coords from route data (${label}):`, routeData);
-
       if (!routeData) return [];
 
       // Case 1: OpenRouteService v2 API with routes array
       if (routeData.routes?.[0]) {
-        console.log("Found routes array structure");
-
         // Check for geometry.coordinates array
         if (routeData.routes[0].geometry?.coordinates) {
-          console.log("Found coordinates array in routes[0].geometry");
           return routeData.routes[0].geometry.coordinates.map(
             (coord: number[]) => [coord[1], coord[0]] as [number, number],
           );
@@ -127,18 +148,13 @@ const RouteMap: React.FC<RouteMapProps> = ({ tripData }) => {
 
         // Check for encoded polyline
         if (routeData.routes[0].geometry && typeof routeData.routes[0].geometry === "string") {
-          console.log("Found encoded polyline string");
-          // Decode the polyline string
           const decoded = decodePolyline(routeData.routes[0].geometry);
-          console.log("Decoded polyline:", decoded.length, "points");
-          // Convert from [lat, lng] to [lng, lat] format
           return decoded;
         }
       }
 
       // Case 2: GeoJSON format with features array
       if (routeData.features?.[0]?.geometry?.coordinates) {
-        console.log("Found GeoJSON features structure");
         return routeData.features[0].geometry.coordinates.map(
           (coord: number[]) => [coord[1], coord[0]] as [number, number],
         );
@@ -146,182 +162,236 @@ const RouteMap: React.FC<RouteMapProps> = ({ tripData }) => {
 
       // Case 3: Direct geometry string
       if (routeData.geometry && typeof routeData.geometry === "string") {
-        console.log("Found direct geometry string");
-        // Decode the polyline string
         const decoded = decodePolyline(routeData.geometry);
-        console.log("Decoded polyline:", decoded.length, "points");
         return decoded;
       }
 
       // Case 4: Try parsing the "geometry" field directly
       if (routeData.geometry && typeof routeData.geometry !== "string") {
-        console.log("Found geometry object");
         if (routeData.geometry.coordinates) {
-          const coords = routeData.geometry.coordinates.map(
+          return routeData.geometry.coordinates.map(
             (coord: number[]) => [coord[1], coord[0]] as [number, number],
           );
-          console.log("Found geometry.coordinates with length:", coords.length);
-          return coords;
         }
       }
 
-      console.log("Could not extract coordinates from route data");
       return [];
     };
 
-    // Extract the route geometry data directly if we have a single route in a different format
-    if (typeof routes === "string") {
+    // Helper function to initialize the map
+    const initializeMap = () => {
       try {
-        const parsedRoutes = JSON.parse(routes);
-        if (parsedRoutes) {
-          routes = parsedRoutes;
+        // Clean up any existing map instance
+        if (mapInstance.current) {
+          mapInstance.current.remove();
+          mapInstance.current = null;
         }
-      } catch (e) {
-        console.log("Could not parse routes string", e);
+
+        // Initialize map
+        mapInstance.current = L.map(mapRef.current!).setView([39.8283, -98.5795], 4);
+
+        // Add tile layer
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap contributors",
+        }).addTo(mapInstance.current);
+
+        // Set map as initialized
+        mapInitialized.current = true;
+
+        // Add route data to map
+        populateMap();
+      } catch (error) {
+        console.error("Error initializing map:", error);
       }
-    }
+    };
 
-    // Process the route based on different possible formats
-    let routeCoordinates: [number, number][] = [];
+    // Helper function to add routes and markers to the map
+    const populateMap = () => {
+      if (!mapInstance.current) return;
 
-    // Process to_pickup route
-    if (routes.to_pickup) {
-      const pickupCoords = extractCoordinates(routes.to_pickup, "to_pickup");
-      console.log("Pickup coordinates:", pickupCoords.length);
+      const map = mapInstance.current;
+      let routes = tripData.route_geometry;
+      const allCoordinates: [number, number][] = [];
 
-      if (pickupCoords.length > 0) {
-        L.polyline(pickupCoords, { color: "#3B82F6", weight: 4, opacity: 0.8 }).addTo(map.current!);
-        allCoordinates.push(...pickupCoords);
-        routeCoordinates.push(...pickupCoords);
-      }
-    }
-
-    // Process to_delivery route
-    if (routes.to_delivery) {
-      const deliveryCoords = extractCoordinates(routes.to_delivery, "to_delivery");
-      console.log("Delivery coordinates:", deliveryCoords.length);
-
-      if (deliveryCoords.length > 0) {
-        L.polyline(deliveryCoords, { color: "#EF4444", weight: 4, opacity: 0.8 }).addTo(
-          map.current!,
-        );
-        allCoordinates.push(...deliveryCoords);
-        routeCoordinates.push(...deliveryCoords);
-      }
-    }
-
-    // If we didn't find coordinates in the standard format, try parsing the entire route_geometry directly
-    if (routeCoordinates.length === 0) {
-      console.log("Trying to parse route_geometry directly");
-      routeCoordinates = extractCoordinates(routes, "direct");
-      if (routeCoordinates.length > 0) {
-        console.log("Found coordinates in direct parsing:", routeCoordinates.length);
-        L.polyline(routeCoordinates, { color: "#10B981", weight: 4, opacity: 0.8 }).addTo(
-          map.current!,
-        );
-        allCoordinates.push(...routeCoordinates);
-      }
-    }
-
-    // Add markers (simplified - would need geocoding for exact coordinates)
-    if (allCoordinates.length > 0) {
-      console.log("Total coordinates:", allCoordinates.length);
-
-      try {
-        const bounds = L.latLngBounds(allCoordinates);
-        map.current!.fitBounds(bounds, { padding: [20, 20] });
-
-        // Add location markers
-        const startCoord = allCoordinates[0];
-        const endCoord = allCoordinates[allCoordinates.length - 1];
-
-        // For pickup location, try to find the junction between routes
-        let pickupIndex = 0;
-        if (routes.to_pickup) {
-          if (routes.to_pickup.routes?.[0]?.geometry?.coordinates) {
-            pickupIndex = routes.to_pickup.routes[0].geometry.coordinates.length - 1;
-          } else if (routes.to_pickup.features?.[0]?.geometry?.coordinates) {
-            pickupIndex = routes.to_pickup.features[0].geometry.coordinates.length - 1;
-          } else if (typeof routes.to_pickup.routes?.[0]?.geometry === "string") {
-            // Estimate from decoded polyline
-            const decodedLength = decodePolyline(routes.to_pickup.routes[0].geometry).length;
-            pickupIndex = decodedLength - 1;
+      // Parse routes if it's a string
+      if (typeof routes === "string") {
+        try {
+          const parsedRoutes = JSON.parse(routes);
+          if (parsedRoutes) {
+            routes = parsedRoutes;
           }
+        } catch (e) {
+          console.log("Could not parse routes string", e);
         }
+      }
 
-        console.log("Pickup index:", pickupIndex, "All coordinates length:", allCoordinates.length);
+      // Create icons
+      const startIcon = createIcon("#10B981", "S");
+      const pickupIcon = createIcon("#3B82F6", "P");
+      const deliveryIcon = createIcon("#EF4444", "D");
+      const fuelIcon = createIcon("#F59E0B", "⛽");
 
-        const midCoord =
-          pickupIndex > 0 && pickupIndex < allCoordinates.length
-            ? allCoordinates[pickupIndex]
-            : allCoordinates[Math.floor(allCoordinates.length / 2)];
+      // Create a larger fuel icon for gas stations
+      const realFuelIcon = L.divIcon({
+        html: `<div style="background-color: #F59E0B; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid black; box-shadow: 0 2px 4px rgba(0,0,0,0.5); color: black; font-weight: bold;">⛽</div>`,
+        className: "custom-div-icon print-visible-icon",
+        iconSize: [36, 36],
+        iconAnchor: [18, 18],
+      });
 
-        console.log("Marker coordinates:", {
-          start: startCoord,
-          pickup: midCoord,
-          delivery: endCoord,
-        });
+      // Process to_pickup route
+      if (routes.to_pickup) {
+        const pickupCoords = extractCoordinates(routes.to_pickup, "to_pickup");
+        if (pickupCoords.length > 0) {
+          L.polyline(pickupCoords, { color: "#3B82F6", weight: 4, opacity: 0.8 }).addTo(map);
+          allCoordinates.push(...pickupCoords);
+        }
+      }
 
-        L.marker(startCoord, { icon: startIcon })
-          .addTo(map.current!)
+      // Process to_delivery route
+      if (routes.to_delivery) {
+        const deliveryCoords = extractCoordinates(routes.to_delivery, "to_delivery");
+        if (deliveryCoords.length > 0) {
+          L.polyline(deliveryCoords, { color: "#EF4444", weight: 4, opacity: 0.8 }).addTo(map);
+          allCoordinates.push(...deliveryCoords);
+        }
+      }
+
+      // If no specific routes found, try to process the whole object as a single route
+      if (allCoordinates.length === 0) {
+        const singleRouteCoords = extractCoordinates(routes, "single_route");
+        if (singleRouteCoords.length > 0) {
+          L.polyline(singleRouteCoords, { color: "#6B7280", weight: 4, opacity: 0.8 }).addTo(map);
+          allCoordinates.push(...singleRouteCoords);
+        }
+      }
+
+      // Add markers for start, pickup, and delivery locations
+      if (allCoordinates.length > 0) {
+        // Add start marker (first coordinate)
+        L.marker(allCoordinates[0], { icon: startIcon })
+          .addTo(map)
           .bindPopup(`<b>Current Location</b><br>${tripData.current_location}`);
 
-        L.marker(midCoord, { icon: pickupIcon })
-          .addTo(map.current!)
-          .bindPopup(`<b>Pickup Location</b><br>${tripData.pickup_location}`);
+        // Add pickup marker (middle coordinate if we have both segments)
+        const pickupIndex = routes.to_pickup
+          ? extractCoordinates(routes.to_pickup).length - 1
+          : Math.floor(allCoordinates.length / 2);
+        if (pickupIndex >= 0 && pickupIndex < allCoordinates.length) {
+          L.marker(allCoordinates[pickupIndex], { icon: pickupIcon })
+            .addTo(map)
+            .bindPopup(`<b>Pickup Location</b><br>${tripData.pickup_location}`);
+        }
 
-        L.marker(endCoord, { icon: deliveryIcon })
-          .addTo(map.current!)
+        // Add delivery marker (last coordinate)
+        L.marker(allCoordinates[allCoordinates.length - 1], { icon: deliveryIcon })
+          .addTo(map)
           .bindPopup(`<b>Delivery Location</b><br>${tripData.dropoff_location}`);
-      } catch (error) {
-        console.error("Error creating map bounds or markers:", error);
-      }
 
-      // Add fuel stop markers
-      if (tripData.fuel_stops && tripData.fuel_stops.length > 0) {
-        // Real gas stations available
-        tripData.fuel_stops.forEach((station, index) => {
-          if (station.location && station.location.lat && station.location.lng) {
-            const marker = L.marker([station.location.lat, station.location.lng], {
-              icon: realFuelIcon,
-            })
-              .addTo(map.current!)
+        // Add fuel stop markers if available
+        if (tripData.fuel_stops && tripData.fuel_stops.length > 0) {
+          tripData.fuel_stops.forEach((stop) => {
+            const realFuelIcon = L.divIcon({
+              html: `<div style="background-color: #F59E0B; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid black; box-shadow: 0 2px 4px rgba(0,0,0,0.5); color: black; font-weight: bold;">⛽</div>`,
+              className: "custom-div-icon print-visible-icon",
+              iconSize: [36, 36],
+              iconAnchor: [18, 18],
+            });
+            const marker = L.marker([stop.location.lat, stop.location.lng], { icon: realFuelIcon })
+              .addTo(map)
               .bindPopup(
-                `<b>${station.name}</b><br>${station.address || "Address not available"}<br>Fuel Stop ${index + 1}`,
+                `<div class="fuel-station-popup">
+                  <b>${stop.name}</b><br>
+                  ${stop.address}<br>
+                  <small>${stop.amenities.join(", ")}</small>
+                </div>`,
               );
 
             marker.on("click", () => {
-              setSelectedStation(station);
+              setSelectedStation(stop);
             });
-          }
-        });
-      } else if (tripData.fuel_stops_required > 0) {
-        // Fallback to estimated positions
-        const fuelStopInterval = Math.floor(
-          allCoordinates.length / (tripData.fuel_stops_required + 1),
-        );
-        for (let i = 1; i <= tripData.fuel_stops_required; i++) {
-          const fuelStopCoord = allCoordinates[i * fuelStopInterval];
-          if (fuelStopCoord) {
-            L.marker(fuelStopCoord, { icon: fuelIcon })
-              .addTo(map.current!)
-              .bindPopup(`<b>Fuel Stop ${i}</b><br>Estimated position based on distance`);
+          });
+        } else if (tripData.fuel_stops_required > 0) {
+          // Fallback: add estimated fuel stops if no actual fuel stops are provided
+          const fuelStopInterval = Math.floor(
+            allCoordinates.length / (tripData.fuel_stops_required + 1),
+          );
+          for (let i = 1; i <= tripData.fuel_stops_required; i++) {
+            const fuelStopIndex = i * fuelStopInterval;
+            if (fuelStopIndex < allCoordinates.length) {
+              const fuelStopCoord = allCoordinates[fuelStopIndex];
+              L.marker(fuelStopCoord, { icon: fuelIcon })
+                .addTo(map)
+                .bindPopup(
+                  `<div class="fuel-station-popup">
+                    <b>Estimated Fuel Stop ${i}</b><br>
+                    Based on route distance<br>
+                    <small>Approximate distance: ${Math.round((tripData.total_distance / (tripData.fuel_stops_required + 1)) * i)} miles from start</small>
+                  </div>`,
+                );
+            }
           }
         }
-      }
-    }
 
-    // Return a cleanup function to remove the map when component unmounts
-    return () => {
-      if (map.current) {
-        map.current.remove();
-        map.current = null;
+        // Fit map to show all coordinates
+        if (allCoordinates.length > 0) {
+          map.fitBounds(L.latLngBounds(allCoordinates));
+        }
+      } else {
+        console.log("No coordinates found to display on map");
       }
     };
-  }, [tripData]);
+
+    // Initialize the map with a slight delay to ensure DOM is ready
+    const timeoutId = setTimeout(() => {
+      initializeMap();
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [tripData.route_geometry]);
+
+  // Clean up when component unmounts
+  useEffect(() => {
+    return () => {
+      if (mapInstance.current) {
+        mapInstance.current.remove();
+        mapInstance.current = null;
+      }
+      mapInitialized.current = false;
+    };
+  }, []);
 
   return (
     <div className="space-y-6">
+      <style jsx>{`
+        @media print {
+          .leaflet-container {
+            height: 16cm !important;
+            page-break-inside: avoid;
+            print-color-adjust: exact !important;
+            -webkit-print-color-adjust: exact !important;
+          }
+          .card {
+            break-inside: avoid;
+            border: 1px solid #ddd;
+            box-shadow: none;
+            margin-bottom: 0.3cm;
+          }
+          .no-print-map {
+            display: none !important;
+          }
+          /* Force all map elements to remain visible during print */
+          .leaflet-marker-icon,
+          .leaflet-marker-shadow,
+          .leaflet-control,
+          .leaflet-pane {
+            display: block !important;
+            visibility: visible !important;
+          }
+        }
+      `}</style>
       {!tripData.route_geometry && (
         <div className="p-4 bg-yellow-100 border border-yellow-300 rounded-md mb-4">
           No route data available. This could be due to missing coordinates or an error in the route
@@ -329,104 +399,113 @@ const RouteMap: React.FC<RouteMapProps> = ({ tripData }) => {
         </div>
       )}
 
-      {/* Map Legend */}
-      <div className="card">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">Route Map</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div className="flex items-center">
-            <div className="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
-            <span>Current Location</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-4 h-4 bg-blue-500 rounded-full mr-2"></div>
-            <span>Pickup</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
-            <span>Delivery</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
-            <span>
-              {tripData.fuel_stops && tripData.fuel_stops.length > 0
-                ? "Gas Station"
-                : "Estimated Fuel Stop"}
-            </span>
-          </div>
+      {/* Legend */}
+      <div className="flex flex-wrap items-center gap-4 text-sm">
+        <div className="flex items-center">
+          <div className="w-3 h-3 bg-blue-500 mr-1"></div>
+          <span>Pickup Route</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-3 h-3 bg-red-500 mr-1"></div>
+          <span>Delivery Route</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-3 h-3 bg-green-500 mr-1 rounded-full"></div>
+          <span>Start</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-3 h-3 bg-blue-500 mr-1 rounded-full"></div>
+          <span>Pickup</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-3 h-3 bg-red-500 mr-1 rounded-full"></div>
+          <span>Delivery</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-3 h-3 bg-orange-500 mr-1 rounded-full"></div>
+          <span>Fuel Stop</span>
         </div>
       </div>
 
       {/* Map Container */}
-      <div className="card overflow-hidden">
-        <div ref={mapRef} style={{ height: "500px", width: "100%" }} className="relative" />
+      <div className="card overflow-hidden no-print-map">
+        <div
+          ref={mapRef}
+          style={{ height: "500px", width: "100%" }}
+          className="relative print:h-[16cm] no-print-map"
+          id="routeMap"
+        />
+        <div className="hidden print:block mt-2 text-center text-xs">
+          Note: Icons may appear faded in print. Fuel stops are marked with ⛽ symbol.
+        </div>
+      </div>
+
+      {/* Route Statistics */}
+      <div className="card p-4">
+        <h3 className="text-lg font-semibold mb-3">Route Statistics</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <p className="text-sm text-gray-600">Total Distance</p>
+            <p className="font-bold">{Math.round(tripData.total_distance)} mi</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">Driving Time</p>
+            <p className="font-bold">{Math.round(tripData.total_duration)} h</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">Fuel Stops</p>
+            <p className="font-bold">{tripData.fuel_stops_required}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">Gas Stations</p>
+            <p className="font-bold">{tripData.fuel_stops?.length || 0}</p>
+          </div>
+        </div>
       </div>
 
       {/* Route Information */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="card">
-          <h4 className="text-lg font-semibold text-gray-900 mb-4">Route Segments</h4>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center py-2 border-b">
-              <span className="text-gray-600">Current → Pickup</span>
-              <span className="font-medium text-blue-600">Segment 1</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b">
-              <span className="text-gray-600">Pickup → Delivery</span>
-              <span className="font-medium text-red-600">Segment 2</span>
-            </div>
+      {selectedStation && (
+        <div className="card no-print-map p-4 border border-orange-200 bg-orange-50">
+          <h3 className="text-lg font-semibold mb-2 text-orange-800">
+            <span className="inline-block mr-2">⛽</span>
+            {selectedStation.name}
+          </h3>
+          <p className="text-gray-700 mb-2">{selectedStation.address}</p>
+          <div className="flex flex-wrap gap-1 mt-2">
+            {selectedStation.amenities.map((amenity, index) => (
+              <span
+                key={index}
+                className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full"
+              >
+                {amenity}
+              </span>
+            ))}
           </div>
         </div>
+      )}
 
-        <div className="card">
-          <h4 className="text-lg font-semibold text-gray-900 mb-4">Trip Statistics</h4>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Total Distance:</span>
-              <span className="font-medium">{Math.round(tripData.total_distance)} miles</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Estimated Driving Time:</span>
-              <span className="font-medium">{Math.round(tripData.total_duration)} hours</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Fuel Stops Required:</span>
-              <span className="font-medium">{tripData.fuel_stops_required}</span>
-            </div>
-            {tripData.fuel_stops && tripData.fuel_stops.length > 0 && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Gas Stations Found:</span>
-                <span className="font-medium">{tripData.fuel_stops.length}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Selected Gas Station Info */}
-          {selectedStation && (
-            <div className="mt-4 pt-4 border-t">
-              <h5 className="font-semibold mb-2">Gas Station Details</h5>
-              <p className="font-medium">{selectedStation.name}</p>
-              <p className="text-sm text-gray-700">
-                {selectedStation.address || "Address not available"}
-              </p>
-              {selectedStation.amenities && selectedStation.amenities.length > 0 && (
-                <div className="mt-2">
-                  <p className="text-xs text-gray-600 mb-1">Amenities:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {selectedStation.amenities.map((amenity, idx) => (
-                      <span
-                        key={idx}
-                        className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
-                      >
-                        {amenity}
-                      </span>
-                    ))}
-                  </div>
+      {/* Fuel Stops Summary - only show when not showing a specific station */}
+      {!selectedStation && tripData.fuel_stops && tripData.fuel_stops.length > 0 && (
+        <div className="card p-4 no-print-map">
+          <h3 className="text-lg font-semibold mb-3">Fuel Stops</h3>
+          <div className="space-y-2 text-sm">
+            {tripData.fuel_stops.map((stop, index) => (
+              <div key={index} className="flex justify-between items-center border-b pb-2">
+                <div>
+                  <p className="font-medium">{stop.name}</p>
+                  <p className="text-gray-600 text-xs">{stop.address}</p>
                 </div>
-              )}
-            </div>
-          )}
+                <button
+                  className="text-blue-600 hover:text-blue-800"
+                  onClick={() => setSelectedStation(stop)}
+                >
+                  Details
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -4,6 +4,7 @@ import Header from './components/Header';
 import TripPlanner from './components/TripPlanner';
 import TripResults from './components/TripResults';
 import './index.css';
+import './styles/print.css';
 
 const App: React.FC = () => {
   return (
