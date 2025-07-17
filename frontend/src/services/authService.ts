@@ -53,16 +53,37 @@ export const authAPI = {
 
       console.log("Login response:", response.data);
 
-      // After successful login, update the default Authorization header for future API calls
-      if (response.data && response.data.access) {
-        api.defaults.headers.common["Authorization"] = `Bearer ${response.data.access}`;
+      // Validate the response contains all required fields
+      if (
+        !response.data ||
+        !response.data.user ||
+        !response.data.access ||
+        !response.data.refresh
+      ) {
+        console.error("Login response missing required fields:", response.data);
+        throw new Error("Invalid response: Missing authentication data");
       }
+
+      // After successful login, update the default Authorization header for future API calls
+      api.defaults.headers.common["Authorization"] = `Bearer ${response.data.access}`;
 
       return response.data;
     } catch (error: any) {
       console.error("Login error:", error);
       console.error("Error response:", error.response?.data);
-      throw error;
+
+      // Create a more informative error message
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.response?.data?.message ||
+        error.message ||
+        "Login failed. Please check your credentials.";
+
+      const enhancedError = new Error(errorMessage);
+      // Preserve original error properties
+      Object.assign(enhancedError, error);
+
+      throw enhancedError;
     }
   },
 
@@ -85,16 +106,37 @@ export const authAPI = {
       });
       console.log("Registration response:", response.data);
 
-      // After successful registration, update the default Authorization header for future API calls
-      if (response.data && response.data.access) {
-        api.defaults.headers.common["Authorization"] = `Bearer ${response.data.access}`;
+      // Validate the response contains all required fields
+      if (
+        !response.data ||
+        !response.data.user ||
+        !response.data.access ||
+        !response.data.refresh
+      ) {
+        console.error("Registration response missing required fields:", response.data);
+        throw new Error("Invalid response: Missing authentication data");
       }
+
+      // After successful registration, update the default Authorization header for future API calls
+      api.defaults.headers.common["Authorization"] = `Bearer ${response.data.access}`;
 
       return response.data;
     } catch (error: any) {
       console.error("Registration error:", error);
       console.error("Error response:", error.response?.data);
-      throw error;
+
+      // Create a more informative error message
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.response?.data?.message ||
+        error.message ||
+        "Registration failed";
+
+      const enhancedError = new Error(errorMessage);
+      // Preserve original error properties
+      Object.assign(enhancedError, error);
+
+      throw enhancedError;
     }
   },
 
@@ -124,10 +166,16 @@ export const authAPI = {
   // Setup method to configure the API with the stored token
   setupAuthHeaderForServiceCalls: (token: string) => {
     if (token) {
+      console.log("Setting up auth header with token");
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     } else {
+      console.warn("Removing auth header - no token provided");
       delete api.defaults.headers.common["Authorization"];
     }
+
+    // Verify the header was set properly
+    const currentHeader = api.defaults.headers.common["Authorization"];
+    console.log("Current Authorization header:", currentHeader ? "Token set" : "No token");
   },
 };
 

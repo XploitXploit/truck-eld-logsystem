@@ -57,16 +57,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await authAPI.login({ username, password });
 
-      setUser(response.user);
-      setToken(response.access);
-      setRefreshToken(response.refresh);
+      if (response && response.user && response.access) {
+        // Set the auth state
+        setUser(response.user);
+        setToken(response.access);
+        setRefreshToken(response.refresh);
 
-      localStorage.setItem("user", JSON.stringify(response.user));
-      localStorage.setItem("token", response.access);
-      localStorage.setItem("refreshToken", response.refresh);
-    } catch (error) {
+        // Store auth data in localStorage
+        localStorage.setItem("user", JSON.stringify(response.user));
+        localStorage.setItem("token", response.access);
+        localStorage.setItem("refreshToken", response.refresh);
+
+        // Configure API headers for subsequent requests
+        authAPI.setupAuthHeaderForServiceCalls(response.access);
+
+        console.log("Login successful - user authenticated");
+      } else {
+        console.error("Login response missing expected data:", response);
+        throw new Error("Invalid login response");
+      }
+    } catch (error: any) {
       console.error("Login failed:", error);
-      throw error;
+
+      // Include a more descriptive error message
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.detail ||
+        "Login failed. Please check your credentials and try again.";
+
+      // Create a new error with the descriptive message
+      const enhancedError = new Error(errorMessage);
+      // Preserve the original error properties
+      Object.assign(enhancedError, error);
+
+      throw enhancedError;
     } finally {
       setLoading(false);
     }
@@ -101,13 +125,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       console.log("Register response:", response);
 
-      setUser(response.user);
-      setToken(response.access);
-      setRefreshToken(response.refresh);
+      if (response && response.user && response.access) {
+        // Set the auth state
+        setUser(response.user);
+        setToken(response.access);
+        setRefreshToken(response.refresh);
 
-      localStorage.setItem("user", JSON.stringify(response.user));
-      localStorage.setItem("token", response.access);
-      localStorage.setItem("refreshToken", response.refresh);
+        // Store auth data in localStorage
+        localStorage.setItem("user", JSON.stringify(response.user));
+        localStorage.setItem("token", response.access);
+        localStorage.setItem("refreshToken", response.refresh);
+
+        // Configure API headers for subsequent requests
+        authAPI.setupAuthHeaderForServiceCalls(response.access);
+      } else {
+        console.error("Registration response missing expected data:", response);
+        throw new Error("Invalid registration response");
+      }
     } catch (error: any) {
       console.error("Registration failed:", error);
       console.error("Error details:", error.response?.data);
@@ -120,7 +154,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log("Structured error data:", JSON.stringify(errorData, null, 2));
       }
 
-      throw error;
+      // Include a more descriptive error message
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.detail ||
+        "Registration failed. Please try again.";
+
+      // Create a new error with the descriptive message
+      const enhancedError = new Error(errorMessage);
+      // Preserve the original error properties
+      Object.assign(enhancedError, error);
+
+      throw enhancedError;
     } finally {
       setLoading(false);
     }

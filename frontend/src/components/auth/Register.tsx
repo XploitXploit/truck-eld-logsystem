@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { register as registerAction } from "../../redux/slices/authSlice";
+import { useAppSelector } from "../../redux/store";
 import type { RegisterFormData } from "../../types";
 import "./Register.css";
 
@@ -18,13 +20,31 @@ const Register: React.FC = () => {
     phone_number: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
+  // Using Redux loading state instead of local state
   const [apiError, setApiError] = useState<string | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
-  const { register } = useAuth();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { isAuthenticated, loading, error: reduxError } = useAppSelector((state) => state.auth);
+
+  // Debug authentication state on component mount and update
+  useEffect(() => {
+    console.log("[Register] Auth state:", isAuthenticated ? "Authenticated" : "Not authenticated");
+    console.log(
+      "[Register] Token in localStorage:",
+      localStorage.getItem("token") ? "Present" : "Not present",
+    );
+  }, [isAuthenticated]);
+
+  // Navigate to trip planner when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      console.log("[Register] User is authenticated, navigating to trip planner");
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -78,7 +98,13 @@ const Register: React.FC = () => {
       return;
     }
 
-    setIsLoading(true);
+    // Let Redux manage the loading state
+    setApiError(null);
+    console.log("[Register] Form submission started, validation passed");
+    console.log(
+      "[Register] Current auth state:",
+      isAuthenticated ? "Authenticated" : "Not authenticated",
+    );
 
     try {
       // Make sure date fields are in the right format
@@ -88,12 +114,26 @@ const Register: React.FC = () => {
         license_expiry: formData.license_expiry || null,
       };
 
-      console.log("Submitting registration form:", processedFormData);
-      await register(processedFormData);
-      console.log("Registration successful!");
-      navigate("/");
+      console.log("[Register] Submitting registration form with Redux:", processedFormData);
+
+      // Dispatch the register action - this will handle setting tokens in localStorage
+      // and updating the Redux state
+      const resultAction = await dispatch(registerAction(processedFormData) as any);
+
+      if (registerAction.fulfilled.match(resultAction)) {
+        console.log("[Register] Registration successful! Auth state should update automatically");
+        // The useEffect above will handle navigation once isAuthenticated becomes true
+      } else if (registerAction.rejected.match(resultAction)) {
+        console.error("[Register] Registration failed:", resultAction.payload);
+        setApiError(
+          typeof resultAction.payload === "string" ? resultAction.payload : "Registration failed",
+        );
+      }
     } catch (error: any) {
       console.error("Registration error:", error);
+
+      // Set error state for form display
+      setApiError(error.message || "An error occurred during registration");
 
       // Handle validation errors from backend
       if (error.response && error.response.data) {
@@ -124,8 +164,6 @@ const Register: React.FC = () => {
       } else {
         setApiError("Registration failed. Please try again later.");
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -455,8 +493,8 @@ const Register: React.FC = () => {
         </div>
 
         <div className="flex items-center justify-end mt-6">
-          <button type="submit" disabled={isLoading} className="submit-button">
-            {isLoading ? (
+          <button type="submit" disabled={loading} className="submit-button">
+            {loading ? (
               <>
                 <svg
                   className="spinner h-5 w-5"
