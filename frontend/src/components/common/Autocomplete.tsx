@@ -10,7 +10,6 @@ interface AutocompleteProps {
   required?: boolean;
 }
 
-// Using the GeocodingFeature interface from our service
 interface SearchResult {
   type: string;
   geometry: {
@@ -24,7 +23,7 @@ interface SearchResult {
     country: string;
     region?: string;
     locality?: string;
-    [key: string]: any; // Allow for other properties
+    [key: string]: any; 
   };
 }
 
@@ -42,12 +41,10 @@ const Autocomplete: React.FC<AutocompleteProps> = ({
   const [loading, setLoading] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Update local state when external value changes
   useEffect(() => {
     setQuery(value);
   }, [value]);
 
-  // Handle outside click to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
@@ -61,7 +58,6 @@ const Autocomplete: React.FC<AutocompleteProps> = ({
     };
   }, []);
 
-  // Debounce search to avoid excessive API calls
   useEffect(() => {
     if (!query || query.length < 3) {
       setResults([]);
@@ -80,10 +76,9 @@ const Autocomplete: React.FC<AutocompleteProps> = ({
 
     setLoading(true);
     try {
-      // Use our OpenRouteService API service
       const features = await openRouteService.searchLocations(searchQuery, {
-        size: 5, // Number of results
-        "boundary.country": "USA,CAN,MEX", // Limit to North America
+        size: 5, 
+        "boundary.country": "USA,CAN,MEX", 
       });
 
       setResults(features as SearchResult[]);
@@ -99,7 +94,6 @@ const Autocomplete: React.FC<AutocompleteProps> = ({
     setQuery(value);
     onChange(value);
 
-    // Only open dropdown if we have input
     if (value.length > 0) {
       setIsOpen(true);
     } else {
@@ -131,7 +125,7 @@ const Autocomplete: React.FC<AutocompleteProps> = ({
         <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
           <svg
             className="animate-spin h-5 w-5 text-gray-400"
-            xmlns="http://www.w3.org/2000/svg"
+            xmlns="http:
             fill="none"
             viewBox="0 0 24 24"
           >

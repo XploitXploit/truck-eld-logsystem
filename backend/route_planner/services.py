@@ -30,7 +30,7 @@ class RouteService:
                 if data.get("features") and len(data["features"]) > 0:
                     coords = data["features"][0]["geometry"]["coordinates"]
                     logger.debug(f"Successfully geocoded '{location}' to {coords}")
-                    return [coords[1], coords[0]]  # [lat, lng]
+                    return [coords[1], coords[0]]
                 logger.debug(f"No geocoding results found for '{location}'")
             else:
                 logger.error(
@@ -45,15 +45,11 @@ class RouteService:
         """Get route between coordinates"""
         url = f"{self.base_url}/v2/directions/driving-hgv"
 
-        coordinates = [
-            [start_coords[1], start_coords[0]]
-        ]  # Convert [lat, lng] to [lng, lat]
+        coordinates = [[start_coords[1], start_coords[0]]]
         if waypoints and len(waypoints) > 0:
             for wp in waypoints:
-                coordinates.append([wp[1], wp[0]])  # Convert [lat, lng] to [lng, lat]
-        coordinates.append(
-            [end_coords[1], end_coords[0]]
-        )  # Convert [lat, lng] to [lng, lat]
+                coordinates.append([wp[1], wp[0]])
+        coordinates.append([end_coords[1], end_coords[0]])
 
         logger.debug(f"Requesting route with coordinates: {coordinates}")
 
@@ -159,9 +155,9 @@ class HOSCalculator:
         self.max_duty_hours = 14
         self.max_weekly_hours = 70
         self.weekly_period_days = 8
-        self.required_rest_break_duration = 0.5  # 30 minutes
-        self.required_rest_break_after = 8  # hours
-        self.min_off_duty_period = 10  # hours
+        self.required_rest_break_duration = 0.5
+        self.required_rest_break_after = 8
+        self.min_off_duty_period = 10
 
     def calculate_eld_logs(self, trip_data):
         """Calculate ELD logs for the entire trip"""
@@ -220,7 +216,6 @@ class HOSCalculator:
             f"Successfully calculated route from {pickup_location} to {dropoff_location}"
         )
 
-
         try:
             pickup_distance = 0
             pickup_duration = 0
@@ -266,7 +261,7 @@ class HOSCalculator:
             total_distance = pickup_distance + delivery_distance
             total_duration = (
                 pickup_duration + delivery_duration
-            ) / 3600  # Convert seconds to hours
+            ) / 3600
 
             logger.info(f"Total trip distance: {total_distance:.1f} miles")
             logger.info(f"Total driving time: {total_duration:.1f} hours")
@@ -279,7 +274,7 @@ class HOSCalculator:
         total_on_duty_time = total_duration + pickup_time + delivery_time
 
         fuel_stops = math.floor(total_distance / 500)
-        fuel_stop_time = fuel_stops * 0.5  # 30 minutes per fuel stop
+        fuel_stop_time = fuel_stops * 0.5
         total_on_duty_time += fuel_stop_time
 
         gas_stations = find_gas_stations_along_route(
@@ -310,7 +305,6 @@ class HOSCalculator:
             "eld_logs": logs,
             "fuel_stops_required": fuel_stops,
             "fuel_stops": gas_stations,
-            "violations": self._check_violations(logs, current_cycle_hours),
         }
 
     def _generate_daily_logs(
@@ -345,8 +339,6 @@ class HOSCalculator:
                 "violations": [],
             }
 
-            day_start = current_time
-
             available_driving = min(self.max_driving_hours, remaining_driving)
             available_duty = min(self.max_duty_hours, remaining_duty)
             weekly_remaining = self.max_weekly_hours - cycle_hours_used
@@ -356,19 +348,19 @@ class HOSCalculator:
                 log_entry["activities"].append(
                     {
                         "start_time": current_time.strftime("%H:%M"),
-                        "end_time": (current_time + timedelta(hours=24)).strftime(
+                        "end_time": (current_time + timedelta(hours=34)).strftime(
                             "%H:%M"
                         ),
                         "status": "off_duty",
-                        "duration": 24.0,
+                        "duration": 34.0,
                         "location": "Rest Area",
                         "description": "34-hour restart required",
                     }
                 )
-                log_entry["daily_totals"]["off_duty"] = 24.0
+                log_entry["daily_totals"]["off_duty"] = 34.0
                 logs.append(log_entry)
 
-                if len(logs) >= 2:  # Second day of restart
+                if len(logs) >= 2:
                     cycle_hours_used = 0
 
                 current_time += timedelta(days=1)
@@ -412,7 +404,7 @@ class HOSCalculator:
                     available_driving - daily_driving,
                     available_duty - daily_duty,
                     self.required_rest_break_after - continuous_driving,
-                    4.0,  # Max 4-hour segments
+                    4.0,
                 )
 
                 if drive_segment <= 0:
@@ -516,7 +508,9 @@ class HOSCalculator:
                 log_entry["activities"].append(
                     {
                         "start_time": current_activity_time.strftime("%H:%M"),
-                        "end_time": (day_start + timedelta(hours=24)).strftime("%H:%M"),
+                        "end_time": current_activity_time.replace(
+                            hour=23, minute=59
+                        ).strftime("%H:%M"),
                         "status": (
                             "sleeper_berth" if off_duty_hours >= 10 else "off_duty"
                         ),
@@ -542,47 +536,10 @@ class HOSCalculator:
 
         return logs
 
-    def _check_violations(self, logs, current_cycle):
-        """Check for HOS violations"""
-        violations = []
-
-        for log in logs:
-            if log["daily_totals"]["driving"] > self.max_driving_hours:
-                violations.append(
-                    {
-                        "date": log["date"],
-                        "type": "Daily Driving Limit Exceeded",
-                        "severity": "violation",
-                        "description": f"Drove {log['daily_totals']['driving']:.1f} hours (limit: {self.max_driving_hours})",
-                    }
-                )
-
-            total_duty = (
-                log["daily_totals"]["driving"]
-                + log["daily_totals"]["on_duty_not_driving"]
-            )
-            if total_duty > self.max_duty_hours:
-                violations.append(
-                    {
-                        "date": log["date"],
-                        "type": "Daily Duty Limit Exceeded",
-                        "severity": "violation",
-                        "description": f"On duty {total_duty:.1f} hours (limit: {self.max_duty_hours})",
-                    }
-                )
-
-        if violations:
-            logger.warning(f"Found {len(violations)} HOS violations")
-            for v in violations:
-                logger.warning(f"Violation: {v['type']} - {v['description']}")
-        else:
-            logger.debug("No HOS violations found")
-        return violations
-
 
 class ELDLogRenderer:
     def __init__(self):
-        self.grid_width = 24 * 4  # 15-minute intervals
+        self.grid_width = 24 * 4
         self.row_height = 30
 
     def generate_log_grid_data(self, log_entry):
@@ -591,7 +548,7 @@ class ELDLogRenderer:
             "date": log_entry["date"],
             "driver_name": "Driver Name",
             "carrier_name": "Carrier Name",
-            "truck_number": "Truck #123",
+            "truck_number": "Truck
             "activities": [],
             "totals": log_entry["daily_totals"],
             "grid_segments": [],
@@ -607,7 +564,7 @@ class ELDLogRenderer:
             grid_data["grid_segments"].append(
                 {
                     "status": activity["status"],
-                    "start_position": (start_minutes / 15),  # 15-minute intervals
+                    "start_position": (start_minutes / 15),
                     "width": ((end_minutes - start_minutes) / 15),
                     "description": activity["description"],
                     "location": activity["location"],

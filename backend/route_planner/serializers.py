@@ -57,7 +57,6 @@ class TripPlanCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         """Validate the input data"""
-        # Add any validation logic here
         if attrs.get("current_cycle_hours", 0) < 0:
             raise serializers.ValidationError(
                 {"current_cycle_hours": "Hours cannot be negative"}
@@ -106,7 +105,7 @@ class TripPlanDetailSerializer(TripPlanSerializer):
         """Calculate number of fuel stops required"""
         if not obj.total_distance:
             return 0
-        return int(obj.total_distance / 500)  # Assuming 500 miles per tank
+        return int(obj.total_distance / 500)
 
     def get_eld_grids(self, obj):
         """Generate ELD grid data for the logs"""

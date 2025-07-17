@@ -11,7 +11,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
   const { isAuthenticated, user, loading, token } = useAppSelector((state) => state.auth);
   const location = useLocation();
 
-  // Debug logging for authentication state
   useEffect(() => {
     console.log("[ProtectedRoute] Current path:", location.pathname);
     console.log(
@@ -27,7 +26,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
     );
   }, [isAuthenticated, loading, location, token, user]);
 
-  // Show loading indicator while authentication state is being determined
   if (loading) {
     console.log("[ProtectedRoute] Showing loading indicator");
     return (
@@ -37,14 +35,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
     );
   }
 
-  // Check authentication
   if (!isAuthenticated) {
     console.log("[ProtectedRoute] Not authenticated, redirecting to login");
-    // Redirect to login, but save the current location they were trying to access
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Check admin privileges if required
   if (requireAdmin && !user?.is_staff) {
     console.log("[ProtectedRoute] Admin access required but user is not staff");
     return (
@@ -61,7 +56,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
     );
   }
 
-  // If authenticated (and admin if required), render the children
   console.log("[ProtectedRoute] Authentication successful, rendering protected content");
   return <>{children}</>;
 };

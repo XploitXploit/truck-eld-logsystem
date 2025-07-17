@@ -11,15 +11,15 @@ const ELDLogGrid: React.FC<ELDLogGridProps> = ({ tripData }) => {
   const getStatusColor = (status: string): string => {
     switch (status) {
       case "off_duty":
-        return "#10B981"; // green
+        return "#10B981"; 
       case "sleeper_berth":
-        return "#8B5CF6"; // purple
+        return "#8B5CF6"; 
       case "driving":
-        return "#EF4444"; // red
+        return "#EF4444"; 
       case "on_duty_not_driving":
-        return "#F59E0B"; // yellow
+        return "#F59E0B"; 
       default:
-        return "#6B7280"; // gray
+        return "#6B7280"; 
     }
   };
 
@@ -55,13 +55,6 @@ const ELDLogGrid: React.FC<ELDLogGridProps> = ({ tripData }) => {
             padding: 0 !important;
           }
           
-          /* Force the main container to full width */
-          .space-y-8 > div {
-            width: 100% !important;
-            max-width: none !important;
-          }
-          
-          /* Ensure grid takes full width */
           .grid-cols-25 {
             width: 100% !important;
             max-width: none !important;
@@ -69,14 +62,6 @@ const ELDLogGrid: React.FC<ELDLogGridProps> = ({ tripData }) => {
             grid-template-columns: 100px repeat(24, 1fr) !important;
           }
           
-          /* Card full width */
-          .card {
-            width: 100% !important;
-            max-width: none !important;
-            margin: 0 !important;
-          }
-          
-          /* Remove any container constraints */
           .border-2.border-black {
             width: 100% !important;
             max-width: none !important;
@@ -108,10 +93,10 @@ const ELDLogGrid: React.FC<ELDLogGridProps> = ({ tripData }) => {
 
       {eld_grids.map((logGrid: ELDGrid, dayIndex: number) => (
         <div key={dayIndex} className="print-page">
-          {/* Log Header */}
+          {}
           <div className="card mb-4">
             <div className="border-2 border-black">
-              {/* Title Section */}
+              {}
               <div className="bg-gray-100 p-4 border-b-2 border-black">
                 <div className="text-center">
                   <h2 className="text-xl font-bold">DRIVER'S DAILY LOG</h2>
@@ -138,7 +123,7 @@ const ELDLogGrid: React.FC<ELDLogGridProps> = ({ tripData }) => {
                 </div>
               </div>
 
-              {/* Driver Information */}
+              {}
               <div className="grid grid-cols-2 gap-4 p-4 border-b border-black text-xs">
                 <div>
                   <p className="mb-1">
@@ -164,7 +149,7 @@ const ELDLogGrid: React.FC<ELDLogGridProps> = ({ tripData }) => {
                 </div>
               </div>
 
-              {/* Time Grid */}
+              {}
               <div className="p-4">
                 <div className="grid grid-cols-25 gap-0 text-xs mb-2">
                   <div className="font-bold">Status</div>
@@ -178,14 +163,14 @@ const ELDLogGrid: React.FC<ELDLogGridProps> = ({ tripData }) => {
                   ))}
                 </div>
 
-                {/* Grid Rows */}
+                {}
                 {["off_duty", "sleeper_berth", "driving", "on_duty_not_driving"].map((status) => (
                   <div key={status} className="grid grid-cols-25 gap-0 mb-1">
                     <div className="text-[10px] font-medium py-2 pr-2 border-r border-gray-300">
                       {getStatusLabel(status)}
                     </div>
                     <div className="col-span-24 relative h-8 border border-gray-300 bg-white">
-                      {/* Grid lines for hours */}
+                      {}
                       {Array.from({ length: 24 }, (_, i) => (
                         <div
                           key={i}
@@ -194,20 +179,16 @@ const ELDLogGrid: React.FC<ELDLogGridProps> = ({ tripData }) => {
                         />
                       ))}
 
-                      {/* Activity segments */}
+                      {}
                       {logGrid.grid_segments
                         .filter((segment) => segment.status === status)
                         .map((segment, segIndex) => {
-                          // For sleeper berth entries that extend past midnight, special handling
                           let adjustedStart = segment.start_position;
                           let adjustedWidth = segment.width;
 
-                          // For entries that start on the current day
                           if (adjustedStart < 96) {
-                            // Clamp start position to valid range (0-96)
                             adjustedStart = Math.max(0, Math.min(adjustedStart, 96));
 
-                            // Ensure segments don't exceed the 24-hour period
                             const maxWidth = 96 - adjustedStart;
                             adjustedWidth = Math.min(adjustedWidth, maxWidth);
 
@@ -228,14 +209,14 @@ const ELDLogGrid: React.FC<ELDLogGridProps> = ({ tripData }) => {
                               </div>
                             );
                           }
-                          return null; // Skip segments that start after this day
+                          return null; 
                         })}
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Remarks Section */}
+              {}
               <div className="p-4 border-t border-black remarks-section">
                 <h4 className="font-bold text-sm mb-2">REMARKS</h4>
                 <div
@@ -243,13 +224,11 @@ const ELDLogGrid: React.FC<ELDLogGridProps> = ({ tripData }) => {
                   style={{ maxHeight: "200px" }}
                 >
                   {logGrid.grid_segments.map((segment, index) => {
-                    // Format time properly, handling 24-hour time
                     const hours = Math.floor((segment.start_position * 15) / 60);
                     const minutes = Math.floor((segment.start_position * 15) % 60);
                     const formattedHours = hours >= 24 ? hours - 24 : hours;
                     const formattedTime = `${formattedHours}:${minutes.toString().padStart(2, "0")}`;
 
-                    // Calculate end time for each segment
                     const endTimeMinutes = (segment.start_position + segment.width) * 15;
                     const endHours = Math.floor(endTimeMinutes / 60);
                     const endMinutes = Math.floor(endTimeMinutes % 60);
@@ -266,7 +245,7 @@ const ELDLogGrid: React.FC<ELDLogGridProps> = ({ tripData }) => {
                 </div>
               </div>
 
-              {/* Totals Section */}
+              {}
               <div className="grid grid-cols-4 gap-4 p-4 border-t border-black text-xs font-bold">
                 <div>
                   <p>
@@ -293,7 +272,7 @@ const ELDLogGrid: React.FC<ELDLogGridProps> = ({ tripData }) => {
             </div>
           </div>
 
-          {/* Activity Details */}
+          {}
           <div className="card no-print">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Day {dayIndex + 1} - Detailed Activities
@@ -325,7 +304,7 @@ const ELDLogGrid: React.FC<ELDLogGridProps> = ({ tripData }) => {
               ))}
             </div>
 
-            {/* Daily Summary */}
+            {}
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
               <h4 className="font-semibold text-gray-900 mb-2">Daily Summary</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -364,7 +343,7 @@ const ELDLogGrid: React.FC<ELDLogGridProps> = ({ tripData }) => {
         </div>
       ))}
 
-      {/* Legend */}
+      {}
       <div className="card no-print">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Status Legend</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

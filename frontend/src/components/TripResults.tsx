@@ -52,11 +52,9 @@ const TripResults: React.FC = () => {
     fetchTripData();
   }, [tripId]);
 
-  // Handle printing
   const handlePrint = (mode: "active" | "all") => {
     setPrintMode(mode);
 
-    // Create optimized print styles
     const style = document.createElement("style");
     style.textContent = `
       @page {
@@ -101,9 +99,7 @@ const TripResults: React.FC = () => {
     }, 100);
   };
 
-  // Main print function
   const printActiveTab = () => {
-    // For ELD logs, force landscape orientation
     if (activeTab === "logs") {
       const style = document.createElement("style");
       style.textContent = `
@@ -149,7 +145,6 @@ const TripResults: React.FC = () => {
         document.head.removeChild(style);
       }, 200);
     } else {
-      // For other tabs, use default orientation with optimized styles
       const style = document.createElement("style");
       style.textContent = `
         @media print {
@@ -187,7 +182,6 @@ const TripResults: React.FC = () => {
     }
   };
 
-  // Print all function
   const printAllTabs = () => {
     handlePrint("all");
   };
@@ -263,7 +257,7 @@ const TripResults: React.FC = () => {
           }
         }
       `}</style>
-      {/* Header - will be hidden in print */}
+      {}
       <div className="flex justify-between items-center mb-6 no-print">
         <div>
           <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-2">
@@ -291,7 +285,7 @@ const TripResults: React.FC = () => {
         </div>
       </div>
 
-      {/* Print Title - only visible when printing */}
+      {}
       <div className="hidden print:block mb-4">
         <h1 className="text-2xl font-bold text-center print-title">
           Trip Plan: {tripData.current_location} → {tripData.pickup_location} →{" "}
@@ -299,7 +293,7 @@ const TripResults: React.FC = () => {
         </h1>
       </div>
 
-      {/* Navigation Tabs - hidden in print */}
+      {}
       <div className="border-b border-gray-200 mb-6 no-print">
         <nav className="-mb-px flex space-x-8">
           {[
@@ -327,7 +321,7 @@ const TripResults: React.FC = () => {
         </nav>
       </div>
 
-      {/* Tab Content for Screen View - hidden in print if printing all */}
+      {}
       <div className={`mb-8 trip-content ${printMode === "all" ? "print:hidden" : ""}`}>
         {activeTab === "summary" && (
           <div ref={summaryRef} className="trip-summary-print print-compact">
@@ -353,7 +347,7 @@ const TripResults: React.FC = () => {
         )}
       </div>
 
-      {/* All Content for Print Mode - only visible when printing all */}
+      {}
       <div className="hidden print:block">
         {printMode === "all" && (
           <>

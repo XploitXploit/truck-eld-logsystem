@@ -29,7 +29,7 @@ class TruckUserViewSet(viewsets.ModelViewSet):
             permission_classes = [permissions.AllowAny]
         elif self.action in ["update", "partial_update", "destroy", "me"]:
             permission_classes = [permissions.IsAuthenticated]
-        else:  # list and retrieve
+        else:
             permission_classes = [permissions.IsAdminUser]
         return [permission() for permission in permission_classes]
 
@@ -69,7 +69,6 @@ class RegisterView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
-        # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
 
         return Response(
@@ -97,7 +96,6 @@ class LoginView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
 
-        # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
 
         return Response(
@@ -119,7 +117,6 @@ def debug_auth(request):
     if request.method == "POST":
         logger.info(f"Debug auth POST received: {request.data}")
         try:
-            # Echo back the POST data to help debug client-server communication
             return Response(
                 {
                     "message": "Debug auth endpoint (POST)",
@@ -134,7 +131,6 @@ def debug_auth(request):
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     else:
-        # For GET requests, just return basic info
         return Response(
             {
                 "message": "Debug auth endpoint (GET)",
@@ -153,7 +149,6 @@ def debug_auth(request):
     if request.method == "POST":
         logger.info(f"Debug auth POST received: {request.data}")
         try:
-            # Echo back the POST data to help debug client-server communication
             return Response(
                 {
                     "message": "Debug auth endpoint (POST)",
@@ -168,7 +163,6 @@ def debug_auth(request):
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     else:
-        # For GET requests, just return basic info
         return Response(
             {
                 "message": "Debug auth endpoint (GET)",

@@ -47,7 +47,6 @@ class TripPlanViewSet(viewsets.ModelViewSet):
         try:
             logger.info("Processing trip planning request")
 
-            # Validate input data
             serializer = TripPlanCreateSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             data = serializer.validated_data
@@ -56,11 +55,9 @@ class TripPlanViewSet(viewsets.ModelViewSet):
                 f"Calculating trip plan from {data['current_location']} to {data['dropoff_location']}"
             )
 
-            # Calculate trip details
             hos_calculator = HOSCalculator()
             trip_result = hos_calculator.calculate_eld_logs(data)
 
-            # Create trip
             trip = TripPlan.objects.create(
                 user=request.user,
                 current_location=data["current_location"],
@@ -75,7 +72,6 @@ class TripPlanViewSet(viewsets.ModelViewSet):
 
             logger.debug(f"Generating ELD log grids for trip ID: {trip.id}")
 
-            # Create violation records
             for violation in trip_result["violations"]:
                 HOSViolation.objects.create(
                     trip=trip,
@@ -84,7 +80,6 @@ class TripPlanViewSet(viewsets.ModelViewSet):
                     severity=violation["severity"],
                 )
 
-            # Return detailed trip information
             return Response(
                 TripPlanDetailSerializer(trip, context={"request": request}).data,
                 status=status.HTTP_201_CREATED,

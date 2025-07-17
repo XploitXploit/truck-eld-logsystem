@@ -13,7 +13,6 @@ interface TripSummaryProps {
 }
 
 const TripSummary: React.FC<TripSummaryProps> = ({ tripData }) => {
-  // Add default values to handle undefined properties
   const { summary = {}, violations = [] } = tripData || {};
   const isCompliant = summary?.compliant ?? true;
 
@@ -28,35 +27,6 @@ const TripSummary: React.FC<TripSummaryProps> = ({ tripData }) => {
             margin-bottom: 0.3cm;
           }
 
-          /* Optimize horizontal space for printing */
-          .print-container {
-            max-width: 100% !important;
-            width: 100% !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-
-          .print-compact-padding {
-            padding: 0.5cm !important;
-          }
-
-          .print-grid-cols-4 {
-            grid-template-columns: repeat(4, 1fr) !important;
-            gap: 0.3cm !important;
-          }
-
-          .print-smaller-text {
-            font-size: 90% !important;
-          }
-
-          .print-smaller-icon {
-            height: 1.25rem !important;
-            width: 1.25rem !important;
-            margin-right: 0.5rem !important;
-          }
-        }
-      `}</style>
-      {/* Compliance Status */}
       <div
         className={`p-6 rounded-lg border print-compact-padding ${
           isCompliant ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
@@ -83,7 +53,7 @@ const TripSummary: React.FC<TripSummaryProps> = ({ tripData }) => {
         </div>
       </div>
 
-      {/* Trip Overview */}
+      {}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 print-grid-cols-4">
         <div className="card">
           <div className="flex items-center">
@@ -134,7 +104,7 @@ const TripSummary: React.FC<TripSummaryProps> = ({ tripData }) => {
         </div>
       </div>
 
-      {/* Route Details */}
+      {}
       <div className="card print-compact-padding">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">Route Details</h3>
         <div className="space-y-3">
@@ -157,7 +127,7 @@ const TripSummary: React.FC<TripSummaryProps> = ({ tripData }) => {
         </div>
       </div>
 
-      {/* Violations */}
+      {}
       {violations?.length > 0 && (
         <div className="card print-compact-padding">
           <h3 className="text-lg font-semibold text-red-900 mb-2">HOS Violations</h3>
@@ -176,7 +146,7 @@ const TripSummary: React.FC<TripSummaryProps> = ({ tripData }) => {
         </div>
       )}
 
-      {/* HOS Regulations Summary */}
+      {}
       <div className="bg-gray-50 rounded-lg p-6 print-compact-padding ">
         <h3 className="text-lg font-semibold text-gray-900 mb-2 ">HOS Regulations Applied</h3>
         <div className="grid md:grid-cols-2 gap-4 text-sm print-smaller-text">

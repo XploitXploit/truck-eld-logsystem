@@ -20,7 +20,6 @@ const Register: React.FC = () => {
     phone_number: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  // Using Redux loading state instead of local state
   const [apiError, setApiError] = useState<string | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
@@ -29,7 +28,6 @@ const Register: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, loading, error: reduxError } = useAppSelector((state) => state.auth);
 
-  // Debug authentication state on component mount and update
   useEffect(() => {
     console.log("[Register] Auth state:", isAuthenticated ? "Authenticated" : "Not authenticated");
     console.log(
@@ -38,7 +36,6 @@ const Register: React.FC = () => {
     );
   }, [isAuthenticated]);
 
-  // Navigate to trip planner when authenticated
   useEffect(() => {
     if (isAuthenticated) {
       console.log("[Register] User is authenticated, navigating to trip planner");
@@ -53,7 +50,6 @@ const Register: React.FC = () => {
       [name]: value,
     }));
 
-    // Clear error for this field when user makes a change
     if (errors[name]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -66,7 +62,6 @@ const Register: React.FC = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    // Required fields
     if (!formData.username) newErrors.username = "Username is required";
     else if (formData.username.length < 3)
       newErrors.username = "Username must be at least 3 characters";
@@ -98,7 +93,6 @@ const Register: React.FC = () => {
       return;
     }
 
-    // Let Redux manage the loading state
     setApiError(null);
     console.log("[Register] Form submission started, validation passed");
     console.log(
@@ -107,22 +101,17 @@ const Register: React.FC = () => {
     );
 
     try {
-      // Make sure date fields are in the right format
       const processedFormData = {
         ...formData,
-        // Convert empty strings to null for date fields
         license_expiry: formData.license_expiry || null,
       };
 
       console.log("[Register] Submitting registration form with Redux:", processedFormData);
 
-      // Dispatch the register action - this will handle setting tokens in localStorage
-      // and updating the Redux state
       const resultAction = await dispatch(registerAction(processedFormData) as any);
 
       if (registerAction.fulfilled.match(resultAction)) {
         console.log("[Register] Registration successful! Auth state should update automatically");
-        // The useEffect above will handle navigation once isAuthenticated becomes true
       } else if (registerAction.rejected.match(resultAction)) {
         console.error("[Register] Registration failed:", resultAction.payload);
         setApiError(
@@ -132,15 +121,12 @@ const Register: React.FC = () => {
     } catch (error: any) {
       console.error("Registration error:", error);
 
-      // Set error state for form display
       setApiError(error.message || "An error occurred during registration");
 
-      // Handle validation errors from backend
       if (error.response && error.response.data) {
         if (typeof error.response.data === "string") {
           setApiError(error.response.data);
         } else {
-          // Transform backend errors to match our format
           const transformedErrors: Record<string, string> = {};
           Object.entries(error.response.data).forEach(([key, value]) => {
             if (Array.isArray(value)) {
@@ -152,7 +138,6 @@ const Register: React.FC = () => {
 
           setErrors(transformedErrors);
 
-          // Also set a general error message summarizing the issues
           const firstError = Object.entries(error.response.data)
             .map(([key, value]) => {
               const errorMsg = Array.isArray(value) ? value[0] : value;
@@ -206,7 +191,7 @@ const Register: React.FC = () => {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Account Information Section */}
+        {}
         <div>
           <h3 className="section-heading">Account Information</h3>
           <div className="form-grid form-grid-2">
@@ -270,7 +255,7 @@ const Register: React.FC = () => {
                 >
                   {passwordVisible ? (
                     <svg
-                      xmlns="http://www.w3.org/2000/svg"
+                      xmlns="http:
                       fill="none"
                       viewBox="0 0 24 24"
                       strokeWidth={1.5}
@@ -285,7 +270,7 @@ const Register: React.FC = () => {
                     </svg>
                   ) : (
                     <svg
-                      xmlns="http://www.w3.org/2000/svg"
+                      xmlns="http:
                       fill="none"
                       viewBox="0 0 24 24"
                       strokeWidth={1.5}
@@ -334,7 +319,7 @@ const Register: React.FC = () => {
                 >
                   {confirmPasswordVisible ? (
                     <svg
-                      xmlns="http://www.w3.org/2000/svg"
+                      xmlns="http:
                       fill="none"
                       viewBox="0 0 24 24"
                       strokeWidth={1.5}
@@ -349,7 +334,7 @@ const Register: React.FC = () => {
                     </svg>
                   ) : (
                     <svg
-                      xmlns="http://www.w3.org/2000/svg"
+                      xmlns="http:
                       fill="none"
                       viewBox="0 0 24 24"
                       strokeWidth={1.5}
@@ -375,7 +360,7 @@ const Register: React.FC = () => {
           </div>
         </div>
 
-        {/* Personal Information Section */}
+        {}
         <div>
           <h3 className="section-heading">Personal Information</h3>
           <div className="form-grid form-grid-2">
@@ -435,7 +420,7 @@ const Register: React.FC = () => {
           </div>
         </div>
 
-        {/* Driver Information Section */}
+        {}
         <div>
           <h3 className="section-heading">Driver Information</h3>
           <div className="form-grid form-grid-3">
@@ -498,7 +483,7 @@ const Register: React.FC = () => {
               <>
                 <svg
                   className="spinner h-5 w-5"
-                  xmlns="http://www.w3.org/2000/svg"
+                  xmlns="http:
                   fill="none"
                   viewBox="0 0 24 24"
                 >

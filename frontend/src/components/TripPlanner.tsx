@@ -36,7 +36,6 @@ const TripPlanner: React.FC = () => {
     setError("");
 
     try {
-      // Simulate step progression for better UX
       const simulateSteps = async () => {
         await new Promise((resolve) => setTimeout(resolve, 800));
         setCalculationStep(2);
@@ -46,12 +45,9 @@ const TripPlanner: React.FC = () => {
         setCalculationStep(4);
       };
 
-      // Start the step simulation
       simulateSteps();
 
-      // Actual API call
       const response = await tripAPI.planTrip(formData);
-      // Using the trip_id property instead of id from the response
       navigate(`/trip/${response.trip_id}`);
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to plan trip. Please try again.");
@@ -63,7 +59,7 @@ const TripPlanner: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Hero Section */}
+      {}
       <div className="text-center mb-12">
         <h2 className="text-4xl font-bold text-gray-900 mb-4">
           Professional Route Planning with ELD Compliance
@@ -91,7 +87,7 @@ const TripPlanner: React.FC = () => {
         </div>
       </div>
 
-      {/* Trip Planning Form */}
+      {}
       <div className="card">
         <h3 className="text-2xl font-bold text-gray-900 mb-6">Plan Your Trip</h3>
 
@@ -106,7 +102,7 @@ const TripPlanner: React.FC = () => {
             <div className="absolute inset-0 bg-white bg-opacity-80 z-10 flex flex-col items-center justify-center rounded-md">
               <svg
                 className="animate-spin h-10 w-10 text-blue-600 mb-4"
-                xmlns="http://www.w3.org/2000/svg"
+                xmlns="http:
                 fill="none"
                 viewBox="0 0 24 24"
               >
@@ -134,7 +130,7 @@ const TripPlanner: React.FC = () => {
                 This may take a moment to ensure regulatory compliance
               </div>
 
-              {/* Step indicator */}
+              {}
               <div className="w-64 bg-gray-200 rounded-full h-2.5">
                 <div
                   className="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-in-out"
@@ -142,7 +138,7 @@ const TripPlanner: React.FC = () => {
                 ></div>
               </div>
 
-              {/* Step labels */}
+              {}
               <div className="w-64 flex justify-between mt-2 text-xs text-gray-500">
                 <div className={calculationStep >= 1 ? "text-blue-600 font-medium" : ""}>Route</div>
                 <div className={calculationStep >= 2 ? "text-blue-600 font-medium" : ""}>HOS</div>
@@ -228,7 +224,7 @@ const TripPlanner: React.FC = () => {
                 <div className="absolute inset-0 flex items-center justify-center">
                   <svg
                     className="animate-spin h-6 w-6 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
+                    xmlns="http:
                     fill="none"
                     viewBox="0 0 24 24"
                   >

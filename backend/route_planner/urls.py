@@ -8,7 +8,6 @@ router.register(r"violations", views.HOSViolationViewSet, basename="violation")
 
 urlpatterns = [
     path("", include(router.urls)),
-    # Keep legacy URLs for backward compatibility
     path(
         "plan-trip/",
         views.TripPlanViewSet.as_view({"post": "plan_trip"}),

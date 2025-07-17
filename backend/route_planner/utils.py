@@ -32,7 +32,7 @@ def find_gas_stations_along_route(
             return []
 
         route_length = len(all_coordinates)
-        if route_length <= 2:  # Need at least start and end points
+        if route_length <= 2:
             logger.warning("Route too short to calculate fuel stops")
             return []
 
@@ -289,6 +289,6 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
         + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
     )
     c = 2 * math.asin(math.sqrt(a))
-    radius = 6371  # Radius of Earth in kilometers
+    radius = 6371
 
     return c * radius

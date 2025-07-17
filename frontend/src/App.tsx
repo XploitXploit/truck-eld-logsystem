@@ -19,35 +19,35 @@ const App: React.FC = () => {
         <div className="min-h-screen bg-gray-50">
           <Header />
           <Toast />
-          <main className="container mx-auto px-4 py-8">
-            <Routes>
-              {/* Public routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/debug" element={<DebugAuth />} />
+            <main className="container mx-auto px-4 py-8">
+              <Routes>
+                {}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/debug" element={<DebugAuth />} />
 
-              {/* Protected routes */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <TripPlanner />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/trip/:tripId"
-                element={
-                  <ProtectedRoute>
-                    <TripResults />
-                  </ProtectedRoute>
-                }
-              />
+                {}
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <TripPlanner />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/trip/:tripId"
+                  element={
+                    <ProtectedRoute>
+                      <TripResults />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Fallback route */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </main>
+                {}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </main>
         </div>
       </Router>
     </AuthProvider>

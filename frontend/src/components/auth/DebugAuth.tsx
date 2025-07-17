@@ -2,7 +2,7 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 
 const API_BASE_URL = import.meta.env.PROD
-  ? import.meta.env.VITE_API_URL || "http://localhost:8000"
+  ? import.meta.env.VITE_API_URL || "http:
   : "";
 
 const DebugAuth: React.FC = () => {
@@ -34,7 +34,6 @@ const DebugAuth: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      // First test with the debug endpoint
       const debugResponse = await axios.post(
         `${API_BASE_URL}/api/auth/debug/`,
         registerData,
@@ -47,7 +46,6 @@ const DebugAuth: React.FC = () => {
 
       console.log('Debug POST response:', debugResponse.data);
 
-      // Then try the actual register endpoint
       const registerResponse = await axios.post(
         `${API_BASE_URL}/api/auth/register/`,
         registerData,
@@ -78,7 +76,6 @@ const DebugAuth: React.FC = () => {
   };
 
   useEffect(() => {
-    // Test connection on component mount
     testBackendConnection();
   }, []);
 

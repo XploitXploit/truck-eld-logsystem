@@ -33,7 +33,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Load from localStorage on initial render
   useEffect(() => {
     const loadStoredAuth = async () => {
       const storedUser = localStorage.getItem("user");
@@ -58,17 +57,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authAPI.login({ username, password });
 
       if (response && response.user && response.access) {
-        // Set the auth state
         setUser(response.user);
         setToken(response.access);
         setRefreshToken(response.refresh);
 
-        // Store auth data in localStorage
         localStorage.setItem("user", JSON.stringify(response.user));
         localStorage.setItem("token", response.access);
         localStorage.setItem("refreshToken", response.refresh);
 
-        // Configure API headers for subsequent requests
         authAPI.setupAuthHeaderForServiceCalls(response.access);
 
         console.log("Login successful - user authenticated");
@@ -79,15 +75,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error: any) {
       console.error("Login failed:", error);
 
-      // Include a more descriptive error message
       const errorMessage =
         error.response?.data?.message ||
         error.response?.data?.detail ||
         "Login failed. Please check your credentials and try again.";
 
-      // Create a new error with the descriptive message
       const enhancedError = new Error(errorMessage);
-      // Preserve the original error properties
       Object.assign(enhancedError, error);
 
       throw enhancedError;
@@ -108,13 +101,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (formData: any) => {
     setLoading(true);
     try {
-      // Make sure we're sending exactly the right format
       console.log("Register form data:", formData);
 
-      // Clone the data to avoid reference issues
       const formDataToSend = { ...formData };
 
-      // Make sure all fields are properly formatted strings
       Object.keys(formDataToSend).forEach((key) => {
         if (formDataToSend[key] === undefined || formDataToSend[key] === null) {
           formDataToSend[key] = "";
@@ -126,17 +116,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log("Register response:", response);
 
       if (response && response.user && response.access) {
-        // Set the auth state
         setUser(response.user);
         setToken(response.access);
         setRefreshToken(response.refresh);
 
-        // Store auth data in localStorage
         localStorage.setItem("user", JSON.stringify(response.user));
         localStorage.setItem("token", response.access);
         localStorage.setItem("refreshToken", response.refresh);
 
-        // Configure API headers for subsequent requests
         authAPI.setupAuthHeaderForServiceCalls(response.access);
       } else {
         console.error("Registration response missing expected data:", response);
@@ -147,22 +134,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error("Error details:", error.response?.data);
       console.error("Error status:", error.response?.status);
 
-      // Attempt to handle specific error cases
       if (error.response?.data) {
         const errorData = error.response.data;
-        // Log structured format for debugging
         console.log("Structured error data:", JSON.stringify(errorData, null, 2));
       }
 
-      // Include a more descriptive error message
       const errorMessage =
         error.response?.data?.message ||
         error.response?.data?.detail ||
         "Registration failed. Please try again.";
 
-      // Create a new error with the descriptive message
       const enhancedError = new Error(errorMessage);
-      // Preserve the original error properties
       Object.assign(enhancedError, error);
 
       throw enhancedError;

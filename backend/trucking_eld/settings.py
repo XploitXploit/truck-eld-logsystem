@@ -23,7 +23,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-change-this-in-produc
 DEBUG = os.environ.get("DEBUG", "True").lower() == "true"
 
 if DEBUG:
-    ALLOWED_HOSTS = ["*"]  # Allow all hosts in debug mode
+    ALLOWED_HOSTS = ["*"]
 else:
     ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
@@ -124,7 +124,6 @@ REST_FRAMEWORK = {
     ],
 }
 
-# JWT Settings
 from datetime import timedelta
 
 SIMPLE_JWT = {
@@ -148,7 +147,6 @@ OPENROUTE_API_KEY = os.environ.get(
 
 CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", "http://localhost:3000,http://trucking_eld_backend:8000").split(",")
 
-# Custom user model
 AUTH_USER_MODEL = "users.TruckUser"
 
 LOGGING = {

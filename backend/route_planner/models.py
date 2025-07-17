@@ -20,7 +20,7 @@ class TripPlan(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     total_distance = models.FloatField(null=True, blank=True)
-    total_duration = models.FloatField(null=True, blank=True)  # in hours
+    total_duration = models.FloatField(null=True, blank=True)
     route_geometry = models.JSONField(null=True, blank=True)
 
     eld_logs = models.JSONField(null=True, blank=True)

@@ -22,7 +22,6 @@ const Login: React.FC = () => {
       console.log("Attempting login with:", { username });
       await dispatch(login({ username, password })).unwrap();
 
-      // Redirect to the previous page or home page
       const from = (location.state as any)?.from?.pathname || "/";
       console.log("Login successful, redirecting to:", from);
       navigate(from);

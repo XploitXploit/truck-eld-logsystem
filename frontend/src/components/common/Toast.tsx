@@ -2,9 +2,6 @@ import React, { useEffect } from 'react';
 import { clearToast, hideToast } from '../../redux/slices/uiSlice';
 import { useAppDispatch, useAppSelector } from '../../redux/store';
 
-/**
- * Toast notification component that displays messages from the UI slice
- */
 const Toast: React.FC = () => {
   const dispatch = useAppDispatch();
   const { message, type, isVisible } = useAppSelector((state) => state.ui.toast);
@@ -13,11 +10,9 @@ const Toast: React.FC = () => {
     let timeoutId: number | null = null;
 
     if (isVisible && message) {
-      // Auto-hide the toast after 5 seconds
       timeoutId = window.setTimeout(() => {
         dispatch(hideToast());
 
-        // Clear the toast content after the hide animation completes
         window.setTimeout(() => {
           dispatch(clearToast());
         }, 300);
@@ -31,12 +26,10 @@ const Toast: React.FC = () => {
     };
   }, [isVisible, message, dispatch]);
 
-  // If there's no message or the toast isn't visible, don't render anything
   if (!message || !isVisible) {
     return null;
   }
 
-  // Define background color based on toast type
   const getBackgroundColor = () => {
     switch (type) {
       case 'success':
@@ -51,7 +44,6 @@ const Toast: React.FC = () => {
     }
   };
 
-  // Define icon based on toast type
   const getIcon = () => {
     switch (type) {
       case 'success':
@@ -99,7 +91,6 @@ const Toast: React.FC = () => {
 
   const handleClose = () => {
     dispatch(hideToast());
-    // Clear the toast content after the hide animation completes
     setTimeout(() => {
       dispatch(clearToast());
     }, 300);

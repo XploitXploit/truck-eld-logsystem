@@ -58,10 +58,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        # Remove password2 as it's not needed for creating the user
         validated_data.pop("password2", None)
 
-        # Create user with the validated data
         user = TruckUser.objects.create_user(
             username=validated_data["username"],
             email=validated_data.get("email", ""),

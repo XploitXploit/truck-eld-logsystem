@@ -35,7 +35,6 @@ class TruckUser(AbstractUser):
         help_text=_("Contact phone number."),
     )
 
-    # Additional fields can be added here as needed
 
     class Meta:
         verbose_name = _("truck user")
