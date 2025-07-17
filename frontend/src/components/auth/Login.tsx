@@ -1,25 +1,26 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { login } from "../../redux/slices/authSlice";
+import { useAppDispatch } from "../../redux/store";
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { login } = useAuth();
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setFormError(null);
     setIsLoading(true);
 
     try {
       console.log("Attempting login with:", { username });
-      await login(username, password);
+      await dispatch(login({ username, password })).unwrap();
 
       // Redirect to the previous page or home page
       const from = (location.state as any)?.from?.pathname || "/";
@@ -29,14 +30,14 @@ const Login: React.FC = () => {
       console.error("Login error:", err);
       if (err.response?.data) {
         if (typeof err.response.data === "object" && err.response.data.detail) {
-          setError(err.response.data.detail);
+          setFormError(err.response.data.detail);
         } else if (typeof err.response.data === "string") {
-          setError(err.response.data);
+          setFormError(err.response.data);
         } else {
-          setError("Login failed. Please check your credentials.");
+          setFormError("Login failed. Please check your credentials.");
         }
       } else {
-        setError("Login failed. Please check your credentials.");
+        setFormError("Login failed. Please check your credentials.");
       }
     } finally {
       setIsLoading(false);
@@ -52,12 +53,12 @@ const Login: React.FC = () => {
       </div>
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        {error && (
+        {formError && (
           <div
             className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
             role="alert"
           >
-            <span className="block sm:inline">{error}</span>
+            <span className="block sm:inline">{formError}</span>
           </div>
         )}
 

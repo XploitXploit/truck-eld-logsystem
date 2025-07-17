@@ -7,6 +7,7 @@ import Autocomplete from "./common/Autocomplete";
 
 const TripPlanner: React.FC = () => {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState<TripFormData>({
     current_location: "",
     pickup_location: "",
@@ -20,9 +21,11 @@ const TripPlanner: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    const updatedValue = name === "current_cycle_hours" ? parseFloat(value) || 0 : value;
+
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "current_cycle_hours" ? parseFloat(value) || 0 : value,
+      [name]: updatedValue,
     }));
   };
 

@@ -1,17 +1,14 @@
-import React, { ReactNode } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import React, { ReactNode } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAppSelector } from "../../redux/store";
 
 interface ProtectedRouteProps {
   children: ReactNode;
   requireAdmin?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
-  children,
-  requireAdmin = false
-}) => {
-  const { isAuthenticated, user, loading } = useAuth();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin = false }) => {
+  const { isAuthenticated, user, loading } = useAppSelector((state) => state.auth);
   const location = useLocation();
 
   // Show loading indicator while authentication state is being determined

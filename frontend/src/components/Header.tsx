@@ -1,10 +1,12 @@
 import { TruckIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { logout } from "../redux/slices/authSlice";
+import { useAppDispatch, useAppSelector } from "../redux/store";
 
 const Header: React.FC = () => {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   // Handle clicks outside the dropdown to close it
@@ -90,7 +92,7 @@ const Header: React.FC = () => {
                     </Link>
                     <div className="border-t border-gray-200"></div>
                     <button
-                      onClick={logout}
+                      onClick={() => dispatch(logout())}
                       className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                     >
                       Sign out

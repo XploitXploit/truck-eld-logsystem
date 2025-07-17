@@ -1,12 +1,13 @@
 import React from "react";
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Header from "./components/Header";
-import TripPlanner from "./components/TripPlanner";
-import TripResults from "./components/TripResults";
 import DebugAuth from "./components/auth/DebugAuth";
 import Login from "./components/auth/Login";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Register from "./components/auth/Register";
+import Toast from "./components/common/Toast";
+import Header from "./components/Header";
+import TripPlanner from "./components/TripPlanner";
+import TripResults from "./components/TripResults";
 import { AuthProvider } from "./context/AuthContext";
 import "./index.css";
 import "./styles/print.css";
@@ -17,6 +18,7 @@ const App: React.FC = () => {
       <Router>
         <div className="min-h-screen bg-gray-50">
           <Header />
+          <Toast />
           <main className="container mx-auto px-4 py-8">
             <Routes>
               {/* Public routes */}
